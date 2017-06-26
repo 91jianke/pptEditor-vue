@@ -1,3 +1,2 @@
-import pptEditor from './pptEditor'
-
-module.exports = pptEditor
+import pptEditor from './pptEditor.vue';
+export {pptEditor};
