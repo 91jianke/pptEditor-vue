@@ -1,3 +1,3 @@
-import pptEditor from 'pptEditor'
+import pptEditor from './pptEditor'
 
 module.exports = pptEditor
