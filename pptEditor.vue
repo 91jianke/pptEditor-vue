@@ -21,9 +21,9 @@
    <canvas :id="'canvas-'+index" :width="width" :height="height"></canvas>
   </div>
     <!--属性-->
-    <div class="prop-box">
+    <!--<div class="prop-box">
         <span :class="`jk-${item}`" v-for="item in propText" :key="item"></span>
-    </div>
+    </div>-->
     <!--菜单-->
     <ul class="contextMenu" ref="contextMenu" v-show="contextMenuShow">
         <li v-for="menu in contextMenu" @click="excue(menu.shortcut)" :key="menu">
