@@ -1,2 +1,2 @@
-import pptEditor from './pptEditor.vue';
-export {pptEditor};
+import pptEditor from './pptEditor.vue'
+export {pptEditor}
