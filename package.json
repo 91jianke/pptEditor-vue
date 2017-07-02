@@ -1,7 +1,7 @@
 {
   "name": "ppteditor-vue",
-  "version": "1.0.5",
-  "description": "一个ppt在线编辑器",
+  "version": "1.0.6",
+  "description": "ppt在线编辑器",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

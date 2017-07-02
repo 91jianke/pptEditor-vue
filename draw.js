@@ -2,7 +2,7 @@
  * create by chuchur /chuchur@qq.com
  * 2017年6月10日 22:39:29
  * author：chuchur
- * version:1.0.5
+ * version:1.0.6
  */
 
 import qdraw from 'qdraw'
@@ -134,7 +134,28 @@ const setActiveStyle = function (styleName, value, object) {
   object.setCoords()
   canvas.renderAll()
 }
-
+{
+  draw.fullScreen=(element)=>{
+    if (element.requestFullscreen) {  
+        element.requestFullscreen();  
+    } else if (element.mozRequestFullScreen) {  
+        element.mozRequestFullScreen();  
+    } else if (element.webkitRequestFullscreen) {  
+        element.webkitRequestFullscreen();  
+    } else if (element.msRequestFullscreen) {  
+        element.msRequestFullscreen();  
+    }  
+  }
+  draw.exitFullscreen=()=>{
+    if (document.exitFullscreen) {  
+        document.exitFullscreen();  
+    } else if (document.mozCancelFullScreen) {  
+        document.mozCancelFullScreen();  
+    } else if (document.webkitExitFullscreen) {  
+        document.webkitExitFullscreen();  
+    }  
+  }
+}
 {
   draw.setActiveStyle = setActiveStyle
   draw.getActiveStyle = getActiveStyle
@@ -379,17 +400,19 @@ const setActiveStyle = function (styleName, value, object) {
       // console.log(s)
       return s
     }
-    if (obj) {
-      return getobj(obj)
-    } else if (group) {
+    if (group) {
       var objectsInGroup = group.getObjects()
-      canvas.discardActiveGroup()
+      // canvas.discardActiveGroup()
       let arr = []
       objectsInGroup.forEach(function (object) {
         let a = getobj(object)
+        a.left = Math.abs(a.left)
+        a.top = Math.abs(a.top)
         arr.push(a)
       })
       return arr
+    } else if (obj) {
+      return getobj(obj)
     } else {
       return ''
     }
@@ -617,7 +640,7 @@ const setActiveStyle = function (styleName, value, object) {
   draw.removeSelected = function () {
     var activeObject = canvas.getActiveObject()
     var activeGroup = canvas.getActiveGroup()
-
+    // console.log(activeObject,activeGroup)
     if (activeGroup) {
       var objectsInGroup = activeGroup.getObjects()
       canvas.discardActiveGroup()

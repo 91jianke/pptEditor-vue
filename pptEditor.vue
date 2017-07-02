@@ -1,9 +1,9 @@
 <template>
- <div class="pages"> 
+ <div class="pages" ref="pages"> 
   <div class="contorl">
     <span :class="(item=='pen'&&isDraw)?'active jk-'+item:'jk-'+item" v-for="item in controls" :key="item" @click="setControl(item)"></span>
   </div>
-  <div :class="item.active?'draw-box active':'draw-box'" v-for="(item,index) in pages" :key="item" ref="drawbox"
+  <div draggable="true" :class="item.active?'draw-box active':'draw-box'" v-for="(item,index) in pages" :key="item" ref="drawbox"
    :width="width"
    :height="height" 
    @mouseup="showMenu($event)"
@@ -163,6 +163,8 @@ export default {
    objStyle:{},
    copyData:[],
    copyPos:10,
+   excuCut:false,
+   isFullScreen:false,
   }
  },
  beforeMount(){
@@ -219,25 +221,26 @@ export default {
     } catch (e) { }
     this.paste(obj,this.copyPos)
   }
-  document.oncopy = (e) => {
-   e.preventDefault();
+  document.oncopy = (e) => { 
+   e.preventDefault(); 
    this.copyPos =10
    let board = e.clipboardData || window.clipboardData
    let prop = draw.getObjStyle()
 
    if (prop) {
-    // console.log(prop)
-    // let str = JSON.stringify({ type: 'text', value: text, x: x, y: y })
     this.copyData = prop
     board.setData('text', JSON.stringify(prop));
+    if(this.excuCut){
+        this.excuCut=false; 
+        draw.removeSelected();
+    }
    }
-   
   }
   document.oncut = (e) => {
    e.preventDefault();
    setTimeout(()=> {// 递归用延时执行
+        this.excuCut=true
         document.execCommand('copy');
-        draw.removeSelected();
    }, 10);
   }
   document.onclick = () => {
@@ -270,11 +273,32 @@ export default {
     }
     
   }
+  document.ondragover =(e)=>{
+      e.preventDefault();
+  }
+  document.ondrop=(e)=>{
+    e.preventDefault();
+    var fs = e.dataTransfer.files;
+    console.log(fs,e.dataTransfer)
+    for(var i =0 ;i<fs.length;i++){
+        if(fs[i].type.indexOf('image')!=-1){
+            var reader = new FileReader();
+            reader.onload=(y)=>{
+            console.log(y)
+
+                 let o = {src:y.target.result,zoomX:1,zoomY:1}
+                 draw.addImage(o)
+            }
+            reader.readAsDataURL(fs[i]);
+        }
+    }
+    // console.log(e.dataTransfer)
+  }
   if(this.imageList.length==0){
       this.getImageCategory()
   } 
  },
- methods: { 
+ methods: {
   updateJosn() {
     if (this.draws.length > 0) {
         this.jsonData = []
@@ -291,7 +315,6 @@ export default {
           if (obj) {
               obj.left += x
               obj.top += x
-              x += 10
           }
           if (obj.text) { //text
               draw.addTextbox(obj)
@@ -314,6 +337,11 @@ export default {
               ps(x)
           })
       }
+      this.copyPos+=10;
+  },
+  toggleFullScreent(ele){
+    !this.isFullScreen? draw.fullScreen(ele):draw.exitFullscreen();
+    this.isFullScreen =!this.isFullScreen
   },
   setControl(item, obj) {
       switch (item) {
@@ -329,8 +357,8 @@ export default {
         case 'table': break;
         case 'media':this.showVideoBox=true;this.getVideoCate(); break;
         case 'book': break;
-        case 'view': break;
-        case 'fullscreen': break;
+        case 'view':this.toggleFullScreent(this.$refs.drawbox[1]); break;
+        case 'fullscreen':this.toggleFullScreent(this.$refs.pages);break;
       }
     },
   activeCanvas(index){
@@ -478,9 +506,13 @@ export default {
   },  
   showMenu(event){
     if (event.button == 2) {
+        event.preventDefault();
         let menu = this.$refs.contextMenu
-        menu.style.left = event.clientX + 'px'
-        menu.style.top = event.clientY + 'px'
+        // (212,293)
+        let y = document.body.clientHeight - event.clientY > 293 ? event.clientY : event.clientY - 283
+        let x = document.body.clientWidth - event.clientX > 212 ? event.clientX : event.clientX - 202
+        menu.style.left = x + 'px'
+        menu.style.top = y + 'px'
         this.contextMenuShow = true;
         //    event.cancelbutton = true
         //    event.returnvalue = false
