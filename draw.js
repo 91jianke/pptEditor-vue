@@ -6,7 +6,6 @@
  */
 
 import qdraw from 'qdraw'
-// var PDF = require('jspdf')
 
 let draw = {}
 
