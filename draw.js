@@ -3,6 +3,7 @@
  * 2017年6月10日 22:39:29
  * author：chuchur
  */
+
 import qdraw from 'qdraw'
 // var PDF = require('jspdf')
 
@@ -202,10 +203,16 @@ const setActiveStyle = function (styleName, value, object) {
     setActiveStyle('textDecoration', value)
   }
   draw.setLeft = function (value) {
-    return getActiveProp('left', value - 0)
+    return setActiveProp('left', value - 0)
   }
   draw.setTop = function (value) {
-    return getActiveProp('left', value - 0)
+    return setActiveProp('top', value - 0)
+  }
+  draw.getLeft = function () {
+    return getActiveProp('left')
+  }
+  draw.getTop = function () {
+    return getActiveProp('top')
   }
   draw.getText = function () {
     return getActiveProp('text')
@@ -290,6 +297,14 @@ const setActiveStyle = function (styleName, value, object) {
     canvas.backgroundColor = value
     canvas.renderAll()
   }
+  draw.createVideo = (url) => {
+    let svg = `<svg xmlns="http://www.w3.org/2000/svg" ><svg>
+                    <foreignobject x="0" y="0" width="200" height="120">
+                      <video src="${url}" class="video" controls="controls"></video></svg>
+                    </foreignobject>
+                  </svg>`
+    return svg
+  }
   draw.createSVG = (o) => {
     // console.log(o)
 
@@ -312,54 +327,81 @@ const setActiveStyle = function (styleName, value, object) {
   }
   draw.getObjStyle = () => {
     let obj = draw.getSelected()
-    if (!obj) return ''
-    let s = {}
-    s.left = obj.left
-    s.top = obj.top
-    s.width = obj.width
-    s.height = obj.height
-    s.angle = obj.angle
-    s.fill = obj.fill
-    s.path = obj.path
-    s.zoomX = obj.zoomX
-    s.zoomY = obj.zoomY
-    s.skewX = obj.skewX
-    s.skewY = obj.skewY
+    let group = canvas.getActiveGroup()
 
-    // console.log(obj,obj.text)
-    // text prop
-    if (obj.text) {
-      s.text = obj.text
-      s.fontSize = obj.fontSize
-      s.fontWeight = obj.fontWeight
-      s.fontFamily = obj.fontFamily
-      s.textAlign = obj.textAlign
+    let getobj = (obj) => {
+      // console.log(obj)
+      let s = {}
+      s.left = obj.left
+      s.top = obj.top
+      s.width = obj.width
+      s.height = obj.height
+      s.angle = obj.angle
+      s.fill = obj.fill
+      s.path = obj.path
+      s.opacity = obj.opacity
+      s.zoomX = obj.zoomX
+      s.zoomY = obj.zoomY
+      s.skewX = obj.skewX
+      s.skewY = obj.skewY
+      s.scaleX = obj.scaleX
+      s.scaleY = obj.scaleY
+      s.flipX = obj.flipX
+      s.flipY = obj.flipY
+      s.backgroundColor = obj.backgroundColor
+      s.type = obj.type || ''
+      // console.log(obj,obj.text)
+      // text prop
+      if (obj.text) {
+        s.text = obj.text
+        s.fontSize = obj.fontSize
+        s.fontWeight = obj.fontWeight
+        s.fontFamily = obj.fontFamily
+        s.textAlign = obj.textAlign
+      }
+      // svg prop
+      if (obj.d) {
+        s.d = obj.d
+        s.stroke = obj.stroke
+        s.strokeWidth = obj.strokeWidth
+      }
+      // 图片
+      if (obj._element) {
+        s.src = obj._element.src
+      }
+      // 画笔
+      if (!obj.d && !obj.text && !obj._element && !obj.type) {
+        let path = ''
+        obj.path.map(x => path += ' ' + x.join(' '))
+        s.path = path
+      }
+      // if(obj.type&&['rect'].indexOf(obj.type))
+      // console.log(s)
+      return s
     }
-    // svg prop
-    if (obj.d) {
-      s.d = obj.d
-      s.stroke = obj.stroke
-      s.strokeWidth = obj.strokeWidth
+    if (obj) {
+      return getobj(obj)
+    } else if (group) {
+      var objectsInGroup = group.getObjects()
+      canvas.discardActiveGroup()
+      let arr = []
+      objectsInGroup.forEach(function (object) {
+        let a = getobj(object)
+        arr.push(a)
+      })
+      return arr
+    } else {
+      return ''
     }
-    // 图片
-    if (obj._element) {
-      s.src = obj._element.src
-    }
-    // 画笔
-    if (!obj.d && !obj.text && !obj._element) {
-      let path = ''
-      obj.path.map(x => path += ' ' + x.join(' '))
-      s.path = path
-    }
-    // console.log(s)
-    return s
   }
 }
 
 // 画图相关
 {
-  draw.addRect = function () {
-    var coord = getRandomLeftTop()
+  draw.addRect = function (options) {
+    if (typeof options != 'object') return;
+    canvas.add(new qdraw.Rect(options))
+    /*var coord = getRandomLeftTop()
 
     canvas.add(new qdraw.Rect({
       left: coord.left,
@@ -368,22 +410,26 @@ const setActiveStyle = function (styleName, value, object) {
       width: 50,
       height: 50,
       opacity: 0.8
-    }))
+    }))*/
   }
 
-  draw.addCircle = function () {
-    var coord = getRandomLeftTop()
+  draw.addCircle = function (options) {
+    if (typeof options != 'object') return;
+    canvas.add(new qdraw.Circle(options))
+    /*var coord = getRandomLeftTop()
     canvas.add(new qdraw.Circle({
       left: coord.left,
       top: coord.top,
       fill: '#' + getRandomColor(),
       radius: 50,
       opacity: 0.8
-    }))
+    }))*/
   }
 
-  draw.addTriangle = function () {
-    var coord = getRandomLeftTop()
+  draw.addTriangle = function (options) {
+    if (typeof options != 'object') return;
+    canvas.add(new qdraw.Triangle(options))
+    /*var coord = getRandomLeftTop()
     canvas.add(new qdraw.Triangle({
       left: coord.left,
       top: coord.top,
@@ -391,7 +437,7 @@ const setActiveStyle = function (styleName, value, object) {
       width: 50,
       height: 50,
       opacity: 0.8
-    }))
+    }))*/
   }
 
   draw.addLine = function () {
@@ -500,8 +546,8 @@ const setActiveStyle = function (styleName, value, object) {
       var loadedObject = qdraw.util.groupSVGElements(objects, options)
       loadedObject.set({
           left: 100, // coord.left,
-          top:100, // coord.top,
-          angle: 0,//getRandomInt(-10, 10)
+          top: 100, // coord.top,
+          angle: 0, //getRandomInt(-10, 10)
         })
         .setCoords()
       canvas.add(loadedObject)
@@ -532,7 +578,6 @@ const setActiveStyle = function (styleName, value, object) {
         // .scale(getRandomNum(minScale, maxScale))
         .scale(o.zoomX || .15, o.zoomY || .15)
         .setCoords()
-
       canvas.add(image)
     })
   }
@@ -565,7 +610,7 @@ const setActiveStyle = function (styleName, value, object) {
   }
 
   draw.getSelected = function () {
-  if (!canvas) return ''
+    if (!canvas) return ''
     return canvas.getActiveObject()
   }
 
@@ -837,6 +882,11 @@ draw.consoleValue = consoleValue
       canvas.renderAll()
     })
   }
+}
+//数据输出部分
+
+{
+
 }
 
 // 绘图模式

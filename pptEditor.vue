@@ -1,24 +1,14 @@
 <template>
- <div class="pages" 
-   @toggleProp="toggleProp"
-   @setProp="setProp"
-   @setStyle="setStyle"
-   @getObjStyle="getObjStyle(objStyle)"
-   @addPage="addPage()"
-   @setColor="setColor(v)"
-   @removePage="removePage(index)"
-   @addComponent="addComponent(item)"
-   @setPenModel="setPenModel(v)"
-   @save="save(type)"> 
+ <div class="pages"> 
   <div class="contorl">
     <span :class="(item=='pen'&&isDraw)?'active jk-'+item:'jk-'+item" v-for="item in controls" :key="item" @click="setControl(item)"></span>
   </div>
   <div :class="item.active?'draw-box active':'draw-box'" v-for="(item,index) in pages" :key="item" ref="drawbox"
    :width="width"
-   :height="height"
+   :height="height" 
    @mouseup="showMenu($event)"
    @mouseover="activeCanvas(index)">
-   <canvas :id="'canvas-'+index" :width="width" :height="height"></canvas>
+   <canvas :id="'canvas-'+index" :width="width" :height="height" ></canvas>
   </div>
     <!--属性-->
     <!--<div class="prop-box">
@@ -63,7 +53,7 @@
     <div class="dask" v-show="showSvgBox">
         <div class="dialg">
             <div class="title">
-                <h1>选择图片</h1>
+                <h1>选择图标</h1>
                 <span class="close" @click="showSvgBox=false">&times;</span>
             </div>
             <div class="content">
@@ -83,10 +73,37 @@
             </div>
         </div>
     </div>
+    <!--视频-->
+    <div class="dask" v-show="showVideoBox">
+        <div class="dialg">
+            <div class="title">
+                <h1>选择视频</h1>
+                <span class="close" @click="showVideoBox=false;videoList=[]">&times;</span>
+            </div>
+            <div class="content">
+                <div class="img-box">
+                    <div class="imgs">
+                        <span v-for="v in videoList" :key="v" @click="addComponent('video',{src:v.video_url})">
+                            <video :src="v.video_url" class="video" controls="controls"></video>
+                            <p>{{v.video_name}}</p>
+                        </span>
+                    </div>
+                    <div class="page"></div>
+                </div>
+                <div class="category"> 
+                    <div class="cate">
+                        <div class="cate-sub">
+                            <span  v-for="v in videoCate" :key="v" @click="getVideo(v.id)">{{v.name}}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
  </div>
 </template>
 <script>
-import qdraw from 'qdraw'
+import qdraw from 'qdraw' 
 import draw from './draw'
  
 export default {
@@ -94,17 +111,21 @@ export default {
  props: {
   'width': {
    type: String,
-   required: true
+   required: true,
+   default:788
   }, 'height': {
    type: String,
-   required: true
+   required: true,
+   default:443
   }
  },
  data() {
   return {
+   jsonData:[],
    propText: ['undo','redo','bold', 'italic', 'underline', 'linethrough', 'text', 'font', 'lineheight', 'alignleft', 'alignright', 'aligncenter', 'alignjustify', 'fill', 'stroke','opacity','border'],
    showImgBox:false,
    showSvgBox:false,
+   showVideoBox:false,
    imgKey:'', 
    isDraw:false,
    controls: ['info', 'plus', 'minus', 'rotate', 'pen', 'text', 'image', 'shape', 'line', 'table', 'media', 'book', 'view', 'fullscreen'],
@@ -113,6 +134,7 @@ export default {
    imageList: [],
    imageCate:[],
    svgList: [],
+   videoList: [],
    svgCate:[
        {id:'58748f83c765ac6654ff83f5',name:'箭头'},
        {id:'5861c63257dccb0f98db4c59',name:'人物'},
@@ -124,21 +146,23 @@ export default {
        {id:'586dec3057dccb2f1bde4b15',name:'其他符号'},
        {id:'58748f28c765ac665a7aaa68',name:'交通'},
        ],
-   pages: [
-    { width: 788, height: 443, active: true }
-   ],
+   videoCate:[],
+   pages: [{ active: true }],
    contextMenuShow: false,
    contextMenu: [
     { text: '剪切', value: '⌘X', shortcut: 'cut' },
     { text: '复制', value: '⌘C', shortcut: 'copy' },
     { text: '粘贴', value: '⌘V', shortcut: 'paste' },
     { text: '删除', value: '⌫', shortcut: 'delete' },
+    { text: '锁定/解锁', value: '⌘L', shortcut: 'lock' },
     { text: '上移', value: '⌘↑', shortcut: 'moveup' },
     { text: '下移', value: '⌘↓', shortcut: 'movedown' },
     { text: '顶层', value: '⌘⇧↑', shortcut: 'movefront' },
     { text: '底层', value: '⌘⇧↓', shortcut: 'moveback' },
    ],
-   objStyle:{}
+   objStyle:{},
+   copyData:[],
+   copyPos:10,
   }
  },
  beforeMount(){
@@ -155,69 +179,155 @@ export default {
   document.oncontextmenu = function (e) {
    e.preventDefault();
   };
-  let x = 10
   document.onpaste = (e) => {
-   // console.log('执行paste', e)
-   let board = e.clipboardData
-   let data = board.getData('text')
-   // console.log( data)
-   let obj = JSON.parse(data)
-   if (obj) {
-    obj.left += x
-    obj.top += x
-    x += 10
-   }
-   if (obj.text) {
-    draw.addTextbox(obj)
-   }
-   if (obj.d || obj.path) {
-    // console.log(obj)
-    draw.createSVG(obj)
-   }
-   if (obj.src) {
-    draw.addImage(obj)
-   }
-   e.preventDefault();
+    e.preventDefault();
+      // console.log('执行paste', e)
+    let board = e.clipboardData
+    // 取粘贴板图片
+    var i = 0,items, item, types;
+    items = board.items
+    if( !items ){
+        return;
+    }
+    item = items[0];
+    types = board.types || [];
+    for( ; i < types.length; i++ ){
+        if( types[i] === 'Files' ){
+            item = items[i];
+            break;
+        }
+    }
+    
+    // 判断是否为图片数据
+    if( item && item.kind === 'file' && item.type.match(/^image\//i) ){
+        // 读取该图片            
+        var file = item.getAsFile()
+        var reader = new FileReader()
+        reader.onload=(e)=>{
+            let o = {src:e.target.result,zoomX:1,zoomY:1}
+            draw.addImage(o)
+        }
+        reader.readAsDataURL(file)
+        return
+    }
+    let data = board.getData('text')
+
+    // console.log( data)
+    let obj = {}
+    try {
+        obj = JSON.parse(data)
+    } catch (e) { }
+    this.paste(obj,this.copyPos)
   }
   document.oncopy = (e) => {
-   x = 10
+   e.preventDefault();
+   this.copyPos =10
    let board = e.clipboardData || window.clipboardData
    let prop = draw.getObjStyle()
 
    if (prop) {
-
+    // console.log(prop)
     // let str = JSON.stringify({ type: 'text', value: text, x: x, y: y })
     this.copyData = prop
     board.setData('text', JSON.stringify(prop));
    }
-   e.preventDefault();
+   
   }
   document.oncut = (e) => {
-   document.execCommand('copy');
-   draw.removeSelected();
    e.preventDefault();
+   setTimeout(()=> {// 递归用延时执行
+        document.execCommand('copy');
+        draw.removeSelected();
+   }, 10);
   }
   document.onclick = () => {
    this.contextMenuShow = false
   }
+  document.onkeydown=(e)=>{
+    let key =e.keyCode
+    // console.log(e)
+    let obj = draw.getSelected()
+    if (obj) {
+        if(key==46||key==8){ 
+            draw.removeSelected()
+        }
+        if(e.ctrlKey)  //shift +ctrl
+        {
+             if(e.shiftKey){
+                if(key==38){draw.bringToFront();}
+                if(key==40){draw.sendToBack();}
+                return;
+            }
+            if(key==38){draw.bringForward();}
+            if(key==40){draw.sendBackwards();}
+            if(key==76){draw.toggleLock();}
+            return;
+        }
+        if (key == 37) { let x = obj.left - 10; draw.setLeft(x) }
+        if (key == 38) { let y = obj.top - 10; draw.setTop(y) }
+        if (key == 39) { let x = obj.left + 10; draw.setLeft(x) }
+        if (key == 40) { let y = obj.top + 10; draw.setTop(y) }
+    }
+    
+  }
   if(this.imageList.length==0){
       this.getImageCategory()
-  }
+  } 
  },
- methods: {
-   setControl(item, obj) {
+ methods: { 
+  updateJosn() {
+    if (this.draws.length > 0) {
+        this.jsonData = []
+        this.draws.map((x) => {
+            let d = JSON.stringify(x)
+            d = JSON.parse(d)
+            this.jsonData.push(d)
+        })
+        this.$emit('getDataJson', this.jsonData)
+    }
+  },  
+  paste(data,x) {
+      let ps = (obj) => {
+          if (obj) {
+              obj.left += x
+              obj.top += x
+              x += 10
+          }
+          if (obj.text) { //text
+              draw.addTextbox(obj)
+          }
+          if (obj.d || obj.path) { //svg
+              // console.log(obj)
+              draw.createSVG(obj)
+          }
+          if (obj.src) { // image
+              draw.addImage(obj)
+          }
+          if (obj.type) { // shape
+              this.addShape(obj)
+          }
+      }
+      if (data.left) {
+          ps(data)
+      } else if (data.length > 0) {
+          data.map((x) => {
+              ps(x)
+          })
+      }
+  },
+  setControl(item, obj) {
       switch (item) {
         case 'info': break;
         case 'plus': this.addPage(); break;
         case 'minus': this.removePage(); break;
-        case 'rotate': break;
+        case 'rotate': draw.setActiveProp('angle',draw.getActiveProp('angle')+90);break;
         case 'pen': this.isDraw = !this.isDraw; this.setPenModel(this.isDraw); break;
         case 'text': this.addComponent('Textbox'); break;
         case 'image':this.showImgBox=true; break;
         case 'shape':this.showSvgBox=true;this.getIcon(this.svgCate[0].id); break;
         case 'line': break;
         case 'table': break;
-        case 'media': break;
+        case 'media':this.showVideoBox=true;this.getVideoCate(); break;
         case 'book': break;
         case 'view': break;
         case 'fullscreen': break;
@@ -238,20 +348,28 @@ export default {
     case 'overline': draw.toggleOverline(); break;
     case 'lock': draw.toggleLock(); break;
    }
+   updateJosn()
   },
   setProp(name, value) {
    draw.setActiveProp(name, value)
+   this.updateJosn()
   },
-  addPage() {
-      var _this = this
-      let index = this.pages.indexOf(this.pages.filter(x => x.active)[0]) + 1
-      this.pages.splice(index, 0, { active: false })
-      //    console.log(index,this.pages)
+  addPage(i) {
+      i=i||1  //for 里面使用闭包传入默认为1
+      //在聚焦的下面插入
+    //   let index = this.pages.indexOf(this.pages.filter(x => x.active)[0]) + 1
+    //   this.pages.splice(index, 0, { active: false })
+
+      //强暴插入
+      this.pages.push({ active: false })
+      let index = this.pages.length-1
+
       setTimeout((index) => {
+        //   console.log(index)
           let id = `canvas-${index}`
           let canvas = new qdraw.Canvas(id)
-          _this.draws.splice(index, 0, canvas)
-      }, 1500, index);
+          this.draws.splice(index, 0, canvas)
+      }, 500*i, index);
   },
   removePage(index) {
       let deleteIndex = 0
@@ -264,21 +382,25 @@ export default {
           this.pages.splice(deleteIndex, 1)
           this.draws.splice(deleteIndex, 1)
       }
+      this.updateJosn()
   },
   setStyle(name, value) {
    draw.setActiveStyle(name, value > 0 ? parseFloat(value) : value)
+   this.updateJosn()
   },
   excue(type) {
    switch (type) {
     case 'cut': document.execCommand('cut'); break;
     case 'copy': document.execCommand('copy'); break;
-    case 'paste': document.execCommand('paste'); break;
+    case 'paste': this.paste(this.copyData,this.copyPos);/*document.execCommand('paste');*/ break;
     case 'delete': draw.removeSelected(); break;
+    case 'lock': draw.toggleLock(); break;
     case 'moveup': draw.bringForward(); break;
     case 'movedown': draw.sendBackwards(); break;
     case 'movefront': draw.bringToFront(); break;
     case 'moveback': draw.sendToBack(); break;
    }
+   this.updateJosn()
    // console.log(this.activeObj)
   },
   setColor(name, value) {
@@ -294,6 +416,18 @@ export default {
     case 'textbg':
      draw.setTextBgColor(value); break;
    }
+   this.updateJosn()
+  },
+  addShape(options){
+    if(!options||!options.type) return;
+    switch(options.type){
+        case 'rect':draw.addRect(options);break;
+        case 'circle':draw.addCircle(options);break;
+        case 'triangle':draw.addTriangle(options);break;
+        case 'line':draw.addLine(options);break;
+        case 'polygon':draw.addPolygon(options);break;
+    }
+    this.updateJosn()
   },
   addComponent(shap, item) {
    switch (shap) {
@@ -326,26 +460,33 @@ export default {
      break
     case 'Textbox': draw.addTextbox({ text: '双击修改文字', fontSize: 25, left: 20, top: 20, fontWeight: '' })
      break
-    case 'svg':
+    case 'video': 
+        let svg = draw.createVideo(item.src)
+        // console.log(svg)
+        draw.loadSVGWithoutGrouping(svg)
      break
     case 'image': draw.addImage({ src: item.src, }); break;
    }
    this.showImgBox=false
    this.showSvgBox=false
+    setTimeout(()=> {
+        this.updateJosn()
+    }, 1000); 
   },
   getObjStyle(){
    draw.getObjStyle()
-  }, 
+  },  
   showMenu(event){
-   if (event.button == 2) {
-       let menu = this.$refs.contextMenu
-       menu.style.left = event.clientX + 'px'
-       menu.style.top = event.clientY + 'px'
-       this.contextMenuShow = true;
-    //    event.cancelbutton = true
-    //    event.returnvalue = false
-    //    event.stopPropagation();
+    if (event.button == 2) {
+        let menu = this.$refs.contextMenu
+        menu.style.left = event.clientX + 'px'
+        menu.style.top = event.clientY + 'px'
+        this.contextMenuShow = true;
+        //    event.cancelbutton = true
+        //    event.returnvalue = false
+        //    event.stopPropagation();
     }
+    this.updateJosn()
   },
   setPenModel(isDraw){
    draw.setFreeDrawingMode(isDraw)
@@ -354,6 +495,7 @@ export default {
    type=='pdf'?'':''
   },
   getImageCategory(){ // 获取图片类型 
+      if (this.imageCate.length > 0) return;
       this.$http.get('//id.91jianke.com:1081/operation_api/v0/image_category/image_category_list?manage_id=1').then(res=>{
         this.imageCate= res.body.data.map(x=>x[0])
         this.getImageList(this.imageCate[0].category_id)
@@ -374,19 +516,61 @@ export default {
         this.imageList =res.body.data
       })
   },
-  getIcon(cid){
+  getIcon(cid){ // 获取图标
     this.$http.get(`//id.91jianke.com:1081/operation_api/v0/shape_template/get_shape_list?category=${cid}&page=1&page_num=150&sort_by=&manage_id=1`).then(res=>{
         this.svgList =res.body.data.shape_items
     })
+  },
+  getVideoCate(){// 获取影片类型
+      if (this.videoCate.length > 0&&this.videoList.length>0) return;
+      this.$http.get('//id.91jianke.com:1081/operation_api/v0/video_category/video_category_list?manage_id=1').then(res=>{
+        let data = res.body.data.map(x=>x[0])
+        data.map((x)=>{
+            if(x.children.length==0){
+                this.videoCate.push({id:x.category_id,name:x.category_name})
+            }else{
+                x.children.map((y)=>{
+                    this.videoCate.push({id:y.category_id,name:y.category_name})
+                })
+            }
+        })
+        this.getVideo(this.videoCate[0].id)
+      })
+  },
+  getVideo(cid){ // 获取类别下的影片
+      this.$http.get(`//id.91jianke.com:1081/operation_api/v0/video_template/get_video_list?category=${cid}&page=1&page_num=30&sort_by=&manage_id=1`).then(res=>{
+        this.videoList =res.body.data.video_items
+      })
+  },
+  initPPT(data){
+     try {
+          if (typeof data != 'object' || this.draws.length <= 0) return;
+          data.map((j, i) => {
+              if (i == 0) {
+                  this.draws[i].loadFromJSON(j, () => {
+                      this.draws[i].renderAll()
+                  })
+              } else {
+                  this.addPage(i)
+                  setTimeout((i, j) => {
+                    //   console.log(i, 'index')
+                      this.draws[i].loadFromJSON(j, () => {
+                          this.draws[i].renderAll()
+                      })
+                  }, 500 * i, i, j);
+              }
+          }) 
+      } catch (e) {
+          console.log(e.message)
+      }
   }
  },
  mounted() {
-  let canvas = new qdraw.Canvas('canvas-0')
-  this.canvas = canvas
-  this.draws.push(canvas) 
-  draw.init(canvas)
- },
-
+    let canvas = new qdraw.Canvas('canvas-0');
+    this.canvas = canvas
+    this.draws.push(canvas)
+    draw.init(canvas) 
+ }, 
 }
 </script>
 
@@ -481,6 +665,7 @@ export default {
                 color: #4a4a4a;
                 width: 50px;
                 height: 40px;
+                line-height: 40px;
                 display: block;
                 position: absolute;
                 right: 0;
@@ -504,7 +689,7 @@ export default {
                     flex-wrap: wrap;
                     flex-direction: wrap;
                     overflow: scroll;
-                    // align-items: flex-start;
+                    align-items: flex-start;
                     align-content: flex-start;
                     justify-content: space-between;
                     span{
@@ -513,7 +698,11 @@ export default {
                         border-radius: 5px;
                         margin: 10px;
                         border: 1px solid #f1f1f1;
+                        font-size: 12px;
+                        color: #000;
+                        // min-width: 200px;
                         img{
+                            height: 90px;
                             // position: relative;
                             // vertical-align: middle;
                             // top: 50%;
@@ -527,6 +716,12 @@ export default {
                             text-align: center;
                             width: 49px;
                             height: 49px;   
+                        }
+                        .video{
+                            display: block;
+                            min-width: 200px;
+                            width: 100%;
+                            height: 120px;
                         }
                         // overflow: hidden;
                     }
@@ -629,7 +824,7 @@ export default {
         &:hover {
             background: #ddd;
         }
-        &:nth-child(4) {
+        &:nth-child(4),&:nth-child(5) {
             border-bottom: 1px solid #e0e0e0;
         }
     }
