@@ -2,6 +2,7 @@
  * create by chuchur /chuchur@qq.com
  * 2017年6月10日 22:39:29
  * author：chuchur
+ * version:1.0.5
  */
 
 import qdraw from 'qdraw'
