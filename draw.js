@@ -1020,11 +1020,11 @@ draw.setDrawingLineShadowWidth = function (value) {
   initBrushes()
 
   function initImagePatternBrush() {
-    var img = new Image()
-    img.src = '../static/img/subtle.png'
+    // var img = new Image()
+    // img.src = '../static/img/subtle.png'
 
-    draw.texturePatternBrush = new qdraw.PatternBrush(canvas)
-    draw.texturePatternBrush.source = img
+    // draw.texturePatternBrush = new qdraw.PatternBrush(canvas)
+    // draw.texturePatternBrush.source = img
   }
 
   function initDiamondPatternBrush() {

@@ -282,11 +282,6 @@ export default {
   document.oncontextmenu = (e)=> {
    e.preventDefault();
   };
-  document.onmousedown =(e)=>{
-    // if(this.preview==true){
-        e.preventDefault();
-    // }
-  }
   document.onpaste = (e) => {
     e.preventDefault();
       // console.log('执行paste', e)
