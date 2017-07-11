@@ -566,6 +566,7 @@ const setActiveStyle = function (styleName, value, object) {
     // console.log('adding shape', shapeName)
     var coord = getRandomLeftTop()
     qdraw.loadSVGFromURL(svgUrl, function (objects, options) {
+      // console.log(objects, options)
       var loadedObject = qdraw.util.groupSVGElements(objects, options)
       loadedObject.set({
           left: 100, // coord.left,
@@ -618,7 +619,8 @@ const setActiveStyle = function (styleName, value, object) {
     if (!qdraw.Canvas.supports('toDataURL')) {
       alert('您的浏览器不支持此项操作！')
     } else {
-      window.open(canvas.toDataURL('png'))
+      // window.open(canvas.toDataURL('png'))
+      return canvas.toDataURL('jpeg')
     }
   }
 
@@ -876,8 +878,9 @@ draw.consoleValue = consoleValue
       canvas.renderAll()
     })
   }
-  draw.loadSVG = function () {
-    _loadSVG(consoleSVGValue)
+  draw.loadSVG = function (svgStr) {
+    _loadSVG(svgStr)
+    // _loadSVG(consoleSVGValue)
   }
 
   var _loadSVG = function (svg) {

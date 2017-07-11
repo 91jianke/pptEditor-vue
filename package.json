@@ -1,6 +1,6 @@
 {
   "name": "ppteditor-vue",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "ppt在线编辑器",
   "main": "index.js",
   "scripts": {
