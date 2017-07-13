@@ -8,7 +8,7 @@
             <canvas :id="'canvas-'+index" :width="width" :height="height"></canvas>
         </div>
         <!--属性-->
-        <div class="prop-box"  v-show="!isPreview">
+        <div class="prop-box" v-show="!isPreview">
             <span :class="`jk-${item}`" v-for="item in propText" :key="item"></span>
         </div>
         <!--菜单-->
@@ -42,6 +42,28 @@ export default {
             type: Boolean,
             default: false,
             //   required:true
+        }
+    },
+    watch: {
+        isPreview(v) {
+            this.draws.map((x) => {
+                x.isPreview = v
+                let obj = x.getActiveObject()
+                let group = x.getActiveGroup()
+                // console.log(group)
+                obj && (obj.active = false)
+                group && (group.active = false)
+
+                if (group) {
+                    var o = group.getObjects()
+                    // canvas.discardActiveGroup()
+                    let arr = []
+                    o.forEach(function (object) {
+                        object.active = false
+                    })
+                }
+                x.renderAll()
+            })
         }
     },
     data() {
@@ -491,7 +513,7 @@ export default {
     },
     mounted() {
         let canvas = new qdraw.Canvas('canvas-0');
-        console.log('isPreview', this.isPreview)
+        // console.log('isPreview', this.isPreview)
         canvas.isPreview = this.isPreview
         this.canvas = canvas
         this.draws.push(canvas)
