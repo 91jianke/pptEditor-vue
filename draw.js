@@ -68,17 +68,21 @@ draw.init = (_canvas) => {
   //   _drawSelection = canvas._drawSelection
   //   canvas._drawSelection = function () {}
   // })
-  // .on('mouse:wheel', (opt) => { // 鼠标滚轮缩放
-  //   var e = opt.e
-  //   var newZoom = canvas.getZoom() + e.deltaY / 300
-  //   canvas.zoomToPoint({
-  //     x: e.offsetX,
-  //     y: e.offsetY
-  //   }, newZoom)
+  /* .on('mouse:wheel', (opt) => { // 鼠标滚轮缩放
+    var e = opt.e
+    var newZoom = canvas.getZoom() + e.deltaY / 300
+    if (newZoom <= 0.2 || newZoom >= 5) {
+      return
+    }
 
-  //   // renderVieportBorders();
-  //   e.preventDefault()
-  // })
+    canvas.zoomToPoint({
+      x: e.offsetX,
+      y: e.offsetY
+    }, newZoom)
+
+    // renderVieportBorders();
+    e.preventDefault()
+    }) */
   // .on('mouse:move', (opt) => {
   //   var currentMouseLeft = opt.e.x
   //   var currentMouseTop = opt.e.y
