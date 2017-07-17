@@ -97,7 +97,9 @@ draw.init = (_canvas) => {
   // })
   // canvas.cornerStyle = 'circle'
 }
-
+draw.render =()=>{
+  canvas.renderAll()
+}
 // 组件属性设置
 
 const getActiveProp = function (name) {
@@ -175,11 +177,12 @@ const setActiveStyle = function (styleName, value, object) {
   //   // })
   //   // doc.save('demo-file.pdf')
   // }
+  
   draw.getOpacity = function () {
     return getActiveStyle('opacity') //*100
   }
   draw.setOpacity = function (value) {
-    setActiveStyle('opacity', parseInt(value, 10)) /// 100)
+    setActiveStyle('opacity', parseFloat(value, 10)) /// 100)
   }
   draw.getFill = function () {
     return getActiveStyle('fill')
@@ -201,7 +204,12 @@ const setActiveStyle = function (styleName, value, object) {
     setActiveStyle('fontStyle',
       getActiveStyle('fontStyle') === 'italic' ? '' : 'italic')
   }
-
+  draw.toggleFlipX = function () {
+    setActiveProp('flipX',!canvas.getActiveObject().flipX )
+  }
+  draw.toggleFlipY = function () {
+    setActiveProp('flipY',!canvas.getActiveObject().flipY )
+  }
   draw.isUnderline = function () {
     return getActiveStyle('textDecoration').indexOf('underline') > -1
   }
@@ -355,7 +363,7 @@ const setActiveStyle = function (styleName, value, object) {
     let group = canvas.getActiveGroup()
 
     let getobj = (obj) => {
-      // console.log(obj)
+      // console.log(obj,obj.styles)
       let s = {}
       s.left = obj.left
       s.top = obj.top
@@ -383,6 +391,7 @@ const setActiveStyle = function (styleName, value, object) {
         s.fontWeight = obj.fontWeight
         s.fontFamily = obj.fontFamily
         s.textAlign = obj.textAlign
+        s.fontStyle = obj.fontStyle
       }
       // svg prop
       if (obj.d) {
@@ -525,7 +534,12 @@ const setActiveStyle = function (styleName, value, object) {
     options.originX = 'left'
     options.hasRotatingPoint = true
     options.centerTransform = true
-    options.width = options.width || 200
+    // options.width = options.width || 300
+    options.hasRotatingPoint=true
+    options.centerTransform = true
+    // options.fontFamily ='微软雅黑'
+    options.fontWeight = options.fontWeight || ''
+    // options.angle = 0
     let text = new qdraw.Textbox(options.text, options)
     // var text = new qdraw.Textbox(text.slice(0, getRandomInt(0, text.length)), {
     // demo
@@ -641,6 +655,10 @@ const setActiveStyle = function (styleName, value, object) {
   draw.getSelected = function () {
     if (!canvas) return ''
     return canvas.getActiveObject()
+  }
+  draw.getSelectedGroup = function () {
+    if (!canvas) return ''
+    return canvas.getActiveGroup()
   }
 
   draw.removeSelected = function () {

@@ -4,20 +4,36 @@
         <div class="contorl" v-show="!isPreview">
             <span :class="(item=='pen'&&isDraw)?'active jk-'+item:'jk-'+item" v-for="item in controls" :key="item" @click="setControl(item)"></span>
         </div>
-        <div draggable="true" :class="item.active?'draw-box active':'draw-box'" v-for="(item,index) in pages" :key="item" ref="drawbox" :width="width" :height="height" :isPreview="isPreview" @mouseup="showMenu($event)" @mouseover="activeCanvas(index)">
+        <!--画板-->
+        <div draggable="true" :class="item.active?'draw-box active':'draw-box'" v-for="(item,index) in pages" :key="item" ref="drawbox" :width="width" :height="height" :isPreview="isPreview" @mouseup="showMenu(item.active,$event)">
+            <div class="view" v-show="!item.active&&!isPreview" :style="'width:'+width+'px;height:'+height+'px;'" @click="activeCanvas(index)">
+                <span>单击编辑</span>
+            </div>
             <canvas :id="'canvas-'+index" :width="width" :height="height"></canvas>
         </div>
         <!--属性-->
         <div class="prop-box" v-show="!isPreview">
-            <span :class="`jk-${item}`" v-for="item in propText" :key="item"></span>
+            <span :class="`jk-${item}`" v-for="item in props" :key="item" @click.stop="setProp(item)">
+                <div class="fonts" v-if="item == 'text'">
+                    <span v-for="f in fonts" :key="f" @click.stop="setProp(item,f)">{{f}}</span>
+                </div>
+                <div class="range" v-if="'font opacity border lineheight charspacing'.indexOf(item)>-1">
+                    <input type="range" v-if="item=='font'" min="12" max="100" step="1" @input="setProp(item,$event)">
+                    <input type="range" v-if="item=='opacity'" min="0" max="1" step="0.1" @input="setProp(item,$event)">
+                    <input type="range" v-if="item=='border'" min="1" max="30" step="1" @input="setProp(item,$event)">
+                    <input type="range" v-if="item=='lineheight'" min="0" max="10" step="0.1" @input="setProp(item,$event)">
+                    <input type="range" v-if="item=='charspacing'" min="-200" max="800" step="10" @input="setProp(item,$event)">
+                </div>
+            </span>
         </div>
         <!--菜单-->
-        <ul class="contextMenu" ref="contextMenu" v-show="contextMenuShow">
+        <menu class="contextMenu" ref="contextMenu" v-show="contextMenuShow">
             <li v-for="menu in contextMenu" @click="excue(menu.shortcut)" :key="menu">
                 {{menu.text}}
                 <span class="shortcut">{{menu.value}}</span>
             </li>
-        </ul>
+        </menu>
+        <!--弹框组件-->
         <compUI :showShiTiBox="showShiTiBox" :showImgBox="showImgBox" :showSvgBox="showSvgBox" :showVideoBox="showVideoBox" :showTableBox="showTableBox" ref="comp" @close="closeBox" @addComponent="addComponent"></compUI>
     </div>
 </template>
@@ -46,33 +62,24 @@ export default {
     },
     watch: {
         isPreview(v) {
-            this.draws.map((x) => {
-                x.isPreview = v
-                let obj = x.getActiveObject()
-                let group = x.getActiveGroup()
-                // console.log(group)
-                obj && (obj.active = false)
-                group && (group.active = false)
-
-                if (group) {
-                    var o = group.getObjects()
-                    // canvas.discardActiveGroup()
-                    let arr = []
-                    o.forEach(function (object) {
-                        object.active = false
-                    })
-                }
-                x.renderAll()
-            })
+            this.cancelSelect(v)
         }
     },
     data() {
         return {
             showShiTiBox: false, showImgBox: false, showSvgBox: false, showVideoBox: false, showTableBox: false,
             jsonData: [],
-            propText: ['undo', 'redo', 'bold', 'italic', 'underline', 'linethrough', 'text', 'font', 'lineheight', 'alignleft', 'alignright', 'aligncenter', 'alignjustify', 'fill', 'stroke', 'opacity', 'border'],
+            props: [],
+            propText: [
+                'undo', 'redo', 'bold', 'italic', 'underline', 'linethrough', 'text',
+                'font', 'lineheight', 'charspacing', 'alignleft', 'alignright', 'aligncenter', 'alignjustify',
+                'fill', 'stroke', 'opacity', 'border',
+                'flipx', 'flipy', 'remove', 'lock'
+            ],
+            static: ['undo', 'redo', 'fill', 'stroke', 'opacity', 'border', 'flipx', 'flipy', 'remove', 'lock'],
+            group: ['undo', 'redo', 'groupleft', 'groupright', 'grouptop', 'groupbottom', 'groupcenterv', 'groupcenterh', 'groupvertical', 'grouphorizontal', 'remove', 'lock'],
             isDraw: false,
-            controls: ['info', 'plus', 'minus', 'rotate', 'pen', 'text', 'image', 'shape', 'line', 'table', 'media', 'book', 'view'],
+            controls: ['info', 'plus', 'minus', 'pen', 'text', 'image', 'shape', 'line', 'table', 'media', 'book', 'view'],
             canvas: '',
             draws: [],
             pages: [{ active: true }],
@@ -88,6 +95,14 @@ export default {
                 { text: '顶层', value: '⌘⇧↑', shortcut: 'movefront' },
                 { text: '底层', value: '⌘⇧↓', shortcut: 'moveback' },
             ],
+            fonts: [
+                '幼圆', '新宋体', '微软雅黑', '宋体', '隶书', '楷体', '黑体', '仿宋',// 自带标准字体
+                '华文中宋', '华文新魂', '华文细黑', '华文宋体', '华文隶书', '华文楷体', '华文琥珀', '华文行楷', '华文仿宋', '华文云彩', // win7 华文系列
+                '方正准圆简体', '方正姚体', '方正细圆简体', '方正舒体', //方正系列
+                'Arial', 'Akzidenz Grotesk', 'Bodoni', 'Consolas', 'Courier', 'Comic sans ms', 'Delicious', 'Engagement',
+                'Frutiger', 'Futura', 'Gill Sans', 'Georgia', 'Garamond', 'Hoefler Text', 'Helvetica Neue', 'Helvetica', 'Impact', 'Monaco',
+                'Myriad pro', 'Officina', 'Optima', 'Plaster', 'PingFang SC', 'Roman', 'Times', 'Tahoma', 'Univers', 'Vani', 'Verdanna', // 常用英文字体
+            ],
             objStyle: {}, copyData: [], copyPos: 10, isFullScreen: false,
         }
     },
@@ -98,7 +113,7 @@ export default {
         addStyle.rel = "stylesheet";
         addStyle.type = "text/css";
         addStyle.media = "screen";
-        addStyle.href = '//at.alicdn.com/t/font_psk9i2npvwy7gb9.css';
+        addStyle.href = '//at.alicdn.com/t/font_endpuw7m5fxn7b9.css';
         container.appendChild(addStyle);
     },
     created() {
@@ -156,7 +171,6 @@ export default {
             }
         }
         document.oncopy = (e) => {
-            console.log('ss1')
             e.preventDefault();
             copy(e)
         };
@@ -223,6 +237,26 @@ export default {
         // }
     },
     methods: {
+        cancelSelect(v) {
+            this.draws.map((x) => {
+                x.isPreview = v
+                let obj = x.getActiveObject()
+                let group = x.getActiveGroup()
+                // console.log(group)
+                obj && (obj.active = false)
+                group && (group.active = false)
+
+                if (group) {
+                    var o = group.getObjects()
+                    // canvas.discardActiveGroup()
+                    let arr = []
+                    o.forEach(function (object) {
+                        object.active = false
+                    })
+                }
+                x.renderAll()
+            })
+        },
         closeBox() {
             this.showShiTiBox = false
             this.showImgBox = false
@@ -230,14 +264,14 @@ export default {
             this.showVideoBox = false
             this.showTableBox = false
         },
-        getImage(index) {
+        getImage(index, formart = 'jpeg') {
             if (index >= 0 && index < this.draws.length) {
-                return this.draws[index].toImage()
+                return this.draws[index].toDataURL(formart)
             }
             if (this.draws.length > 0) {
-                data = []
+                let data = []
                 this.draws.map((x) => {
-                    let d = x.toImage()
+                    let d = x.toDataURL(formart)
                     data.push(d)
                 })
                 return data
@@ -248,8 +282,9 @@ export default {
             if (this.draws.length > 0) {
                 this.draws.map((x) => {
                     let d = JSON.stringify(x)
-                    d = JSON.parse(d)
-                    jsonData.push(d)
+                    let rd = d.replace(/"stroke":null,|"transformMatrix":null,|"visible":true,|"opacity":1,|"flipY":false,|"scaleX":1,|"scaleY":1,|"flipX":false,|"angle":0,|"skewX":0,|"skewY":0,|"strokeDashArray":null,|"shadow":null,|"clipTo":null,|"backgroundColor":"",|"textDecoration":"",|"textBackgroundColor":"",|"fontStyle":"",|"fontWeight":"",|"fill":"",|"fill":"rgb(0,0,0)",|"fillRule":"nonzero",|"strokeMiterLimit":10,|"strokeLineJoin":"miter",|"strokeLineCap":"butt",|"fontWeight":"normal",|"originX":"left",|"originY":"top",|"textAlign":"left",|"charSpacing":0,/gm, '')
+                    let data = JSON.parse(rd)
+                    jsonData.push(data)
                 })
                 return jsonData
             }
@@ -319,6 +354,7 @@ export default {
                 case 'view': this.toggleFullScreent(this.$refs.drawbox[1]); break;
                 case 'fullscreen': this.toggleFullScreent(this.$refs.pages); break;
             }
+            this.cancelSelect(false)
         },
         activeCanvas(index) {
             this.pages.map(x => x.active = false)
@@ -327,19 +363,123 @@ export default {
             this.setPenModel(this.isDraw)
         },
         toggleProp(type) {
+            let align = 'Left'
             switch (type) {
                 case 'bold': draw.toggleBold(); break;
                 case 'italic': draw.toggleItalic(); break;
                 case 'underline': draw.toggleUnderline(); break;
                 case 'linethrough': draw.toggleLinethrough(); break;
                 case 'overline': draw.toggleOverline(); break;
-                case 'lock': draw.toggleLock(); break;
+                // case 'lock': draw.toggleLock(); break;
+                case 'alignleft': draw.setActiveProp('textAlign', 'left'); break;
+                case 'alignright': draw.setActiveProp('textAlign', 'right'); break;
+                case 'aligncenter': draw.setActiveProp('textAlign', 'center'); break;
+                case 'alignjustify': draw.setActiveProp('textAlign', 'justify'); break;
             }
-            updateJosn()
+            // updateJosn()
         },
-        setProp(name, value) {
-            draw.setActiveProp(name, value)
-            this.updateJosn()
+        setAlign(name, g) {
+            // let ls = g.map((x) => { return { l: x.left, r: x.left + x.width, t: x.top, b: x.top + x.height } })
+            // console.log(ls)
+            var ls, rs, ts, bs, minl, maxr, mint, maxb, count, newboxs;
+            switch (name) {
+                case 'groupleft':
+                    ls = g.map(x => x.left)
+                    minl = Math.min.apply(null, ls)
+                    g.map(x => x.set('left', minl).setCoords())
+                    break;
+                case 'groupright':
+                    rs = g.map(x => x.left + x.width)
+                    maxr = Math.max.apply(null, rs)
+                    g.map(x => x.set('left', x.left + maxr - x.left - x.width).setCoords())
+                    break;
+                case 'grouptop':
+                    ts = g.map(x => x.top)
+                    mint = Math.min.apply(null, ts)
+                    g.map(x => x.set('top', mint).setCoords())
+                    break;
+                case 'groupbottom':
+                    bs = g.map(x => x.top + x.height)
+                    maxb = Math.max.apply(null, bs)
+                    g.map(x => x.set('top', x.top + maxb - x.top - x.height).setCoords())
+                    break;
+                case 'groupcenterv':
+                    rs = g.map(x => x.left + x.width)
+                    ls = g.map(x => x.left)
+                    maxr = Math.max.apply(null, rs)
+                    minl = Math.min.apply(null, ls)
+                    g.map((x) => {
+                        let o = (maxr - minl - x.width) / 2
+                        x.set('left', minl + o).setCoords()
+                    })
+                    break;
+                case 'groupcenterh':
+                    bs = g.map(x => x.top + x.height)
+                    ts = g.map(x => x.top)
+                    maxb = Math.max.apply(null, bs)
+                    mint = Math.min.apply(null, ts)
+                    g.map((x) => {
+                        let o = (maxb - mint - x.height) / 2
+                        x.set('top', mint + o).setCoords()
+                    })
+                    break;
+                case 'groupvertical':// 垂直分布算法
+                    /*count = g.length
+                    bs = g.map(x => x.top + x.height)
+                    ts = g.map(x => x.top)
+                    maxb = Math.max.apply(null, bs)
+                    mint = Math.min.apply(null, ts)
+                    let y = (maxb - mint) / count
+                    newboxs = g.map((x, i) => mint + y * i)
+                    g.map((x, i) => i != 0 && i != count - 1 && x.set('top', mint + o).setCoords())*/
+                    break;
+                case 'grouphorizontal': // 水平分布算法
+                    // count = g.length
+
+                    // newboxs = g.map(x=>)
+                    break;
+            }
+            draw.render()
+        },
+        setProp(name, event) {
+            let obj = draw.getSelected()
+            let g = draw.getSelectedGroup()
+            if (!obj && !g) return
+            //group 
+            if ('groupleft groupright grouptop groupbottom groupcenterv groupcenterh groupvertical grouphorizontal'.indexOf(name) > -1) {
+                // console.log(g)
+                this.setAlign(name, g.getObjects())
+                return
+            }
+            // static
+            if ('flipx flipy lock remove text'.indexOf(name) > -1) {
+                switch (name) {
+                    case 'flipx': draw.toggleFlipX(); break;
+                    case 'flipy': draw.toggleFlipY(); break;
+                    case 'lock': draw.toggleLock(); break;
+                    case 'remove': draw.removeSelected(); break;
+                    case 'text': event && draw.setFontFamily(event); break;
+                }
+                return
+            }
+            // text
+            if ('font opacity border lineheight charspacing'.indexOf(name) > -1 && event) {
+                let v = event.target.value
+                switch (name) {
+                    case 'font': draw.setFontSize(v); break;
+                    case 'opacity': draw.setOpacity(v); break;
+                    case 'border': draw.setStrokeWidth(v); break;
+                    case 'lineheight': draw.setLineHeight(v); break;
+                    case 'charspacing': draw.setCharSpacing(v); break;
+                }
+                return
+            }
+            // text toggle
+            if (obj.text) {
+                this.toggleProp(name)
+            }
+            // draw.setActiveProp(name, value)
+            // this.updateJosn()
         },
         addPage(i) {
             i = i || 1  //for 里面使用闭包传入默认为1
@@ -445,7 +585,7 @@ export default {
                     break
                 case 'Rect': draw.addRect()
                     break
-                case 'Textbox': draw.addTextbox({ text: '双击修改文字', fontSize: 25, left: 20, top: 20, fontWeight: '' })
+                case 'Textbox': draw.addTextbox({ text: '双击修改文字', fontSize: 14, left: 20, top: 20 })
                     break
                 case 'video':
                     let svg = draw.createVideo(item.src)
@@ -463,8 +603,16 @@ export default {
         getObjStyle() {
             draw.getObjStyle()
         },
-        showMenu(event) {
-            if (this.isPreview) return
+        showMenu(active, event) {
+            if (this.isPreview || !active) return
+            if (event.button == 0) {
+                setTimeout(() => {
+                    let obj = draw.getSelected()
+                    let group = draw.getSelectedGroup()
+                    this.props = obj ? (obj.text ? this.propText : this.static) : (group ? this.group : [])
+                }, 100);
+                return
+            }
             if (event.button == 2) {
                 event.preventDefault();
                 let menu = this.$refs.contextMenu
@@ -473,12 +621,14 @@ export default {
                 let x = document.body.clientWidth - event.clientX > 212 ? event.clientX : event.clientX - 202
                 menu.style.left = x + 'px'
                 menu.style.top = y + 'px'
-                this.contextMenuShow = true;
+                this.contextMenuShow = true
                 //    event.cancelbutton = true
                 //    event.returnvalue = false
                 //    event.stopPropagation();
+                return
             }
-            this.updateJosn()
+
+            //this.updateJosn()
         },
         setPenModel(isDraw) {
             draw.setFreeDrawingMode(isDraw)
@@ -516,8 +666,9 @@ export default {
         // console.log('isPreview', this.isPreview)
         canvas.isPreview = this.isPreview
         this.canvas = canvas
-        this.draws.push(canvas)
         draw.init(canvas)
+        this.draws.push(canvas)
+
     },
 
 }

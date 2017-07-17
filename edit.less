@@ -1,3 +1,5 @@
+@import 'range.less';
+
 .pages {
     box-sizing: border-box; // display: none;
     flex: 1; // width: 788px;
@@ -15,6 +17,19 @@
         // flex: 1;
         float: left;
         margin-bottom: 30px;
+        position: relative;
+        .view {
+            background: rgba(255, 255, 255, 0.9);
+            position: absolute;
+            z-index: 9;
+            text-align: center;
+            color: #059fe6;
+            font-size: 20px;
+            span {
+                margin-top: 30%;
+                display: block;
+            }
+        }
     }
     &>.active {
         border: 1px solid #059fe6;
@@ -215,17 +230,51 @@
     background: #059fe6;
     position: absolute;
     z-index: 100;
-    top:66px;
+    top: 66px;
     border-radius: 3px; // display: flex;
     display: flex;
-    overflow: hidden; // padding: 5px;
+    // overflow: hidden; // padding: 5px;
     span {
         flex: 1;
         color: #fff;
         font-size: 20px;
         padding: 7px 9px;
+        position: relative;
         &:hover {
-            background: red;
+            background: orange;
+            .range,.fonts{
+                display: block;
+            }
+        }
+    }
+    .range{
+        position: absolute;
+        top:32px;
+        left:0;
+        height: 140px;
+        background: #eee;
+        width:38px;
+        display: none;
+    }
+    input[type=range]{
+        transform:rotate(90deg);
+        transform-origin: 12% 78%;
+        width: 120px;
+        height: 20px;
+    }
+    .fonts{
+        position: absolute;
+        top:32px;
+        left:0;
+        width: 180px;
+        background:#eee;
+        height: 300px;
+        overflow: scroll;
+        display: none;
+        span{
+            display: block;
+            font-size:14px;
+            color: #999;
         }
     }
 }
