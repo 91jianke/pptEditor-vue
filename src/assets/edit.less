@@ -1,5 +1,4 @@
 @import 'range.less';
-
 .pages {
     box-sizing: border-box; // display: none;
     flex: 1; // width: 788px;
@@ -9,6 +8,7 @@
     z-index: 0;
     height: 100%;
     overflow: scroll;
+    position: relative;
     flex-direction: row; // position: relative;
     .draw-box {
         background: #ffffff;
@@ -77,7 +77,7 @@
         width: 80%;
         max-width: 900px;
         min-width: 600px;
-        height: 70%;
+        height: 50%;
         background: #fff;
         border-radius: 3px;
         box-shadow: 0 0 24px #a7a7a7;
@@ -230,7 +230,7 @@
     background: #059fe6;
     position: absolute;
     z-index: 100;
-    top: 66px;
+    top: 11px;
     border-radius: 3px; // display: flex;
     display: flex;
     // overflow: hidden; // padding: 5px;
@@ -240,42 +240,52 @@
         font-size: 20px;
         padding: 7px 9px;
         position: relative;
+        width: 38px;
+        box-sizing: border-box;
         &:hover {
             background: orange;
-            .range,.fonts{
+            .range, .fonts,.colorbox {
                 display: block;
             }
         }
     }
-    .range{
+    .range {
         position: absolute;
-        top:32px;
-        left:0;
+        top: 32px;
+        left: 0;
         height: 140px;
         background: #eee;
-        width:38px;
+        width: 38px;
         display: none;
     }
-    input[type=range]{
-        transform:rotate(90deg);
+    input[type=range] {
+        transform: rotate(90deg);
         transform-origin: 12% 78%;
         width: 120px;
         height: 20px;
     }
-    .fonts{
+    .fonts {
         position: absolute;
-        top:32px;
-        left:0;
+        top: 32px;
+        left: 0;
         width: 180px;
-        background:#eee;
+        background: #eee;
         height: 300px;
         overflow: scroll;
         display: none;
-        span{
+        span {
             display: block;
-            font-size:14px;
+            font-size: 14px;
             color: #999;
+            width: 100%;
         }
+    }
+    .colorbox {
+        position: absolute;
+        background: #fff;
+        left:0;
+        border: 1px solid #f5f5f5;
+        display: none;
     }
 }
 
@@ -284,11 +294,12 @@
     border: 1px solid #d4d4d4;
     border-radius: 1px;
     box-shadow: 6px 6px 14px #cccccc;
-    position: absolute;
+    position: fixed;
     width: 200px;
     left: 100px;
     top: 100px;
     color: #000;
+    z-index: 999;
     li {
         padding: 7px 20px;
         display: flex;
@@ -297,8 +308,7 @@
         &:hover {
             background: #ddd;
         }
-        &:nth-child(4),
-        &:nth-child(5) {
+        &:nth-child(4), &:nth-child(5) {
             border-bottom: 1px solid #e0e0e0;
         }
     }
@@ -310,8 +320,7 @@
     box-sizing: border-box;
     height: 26px;
     text-align: left;
-    input[type=text],
-    input[type=number] {
+    input[type=text], input[type=number] {
         border: 1px solid #ddd;
         padding: 3px 5px;
         width: 100px;
@@ -379,6 +388,7 @@
             padding: 6px 8px;
             margin-left: 10px;
             border-radius: 2px;
+            color: #5f5f5f;
         }
     }
     label {
@@ -386,18 +396,16 @@
         margin-left: 10px;
         margin-bottom: 10px;
         height: 29px;
-        input[type=radio],
-        input[type=checkbox] {
+        input[type=radio], input[type=checkbox] {
             margin-right: 5px;
         }
-        input[type=button],
-        .b-r,
-        .b-l {
+        input[type=button], .b-r, .b-l {
             border-radius: 50% !important;
             height: 29px;
-            width: 29px;
+            width: 29px !important;
             margin-left: 10px;
-            color: #999;
+            color: #5f5f5f;
+            text-align: center;
         }
         .b-r {
             border-color: red !important;
@@ -407,9 +415,12 @@
             border-color: blue !important;
             color: blue;
         }
+        input[type=text]{
+            width: 317px;
+        }
     }
-    input[type=text],
-    textarea {
+    
+    input[type=text], textarea {
         border: 1px solid #ccc;
         padding: 6px 8px;
         border-radius: 2px;
@@ -423,5 +434,10 @@
     }
     .right {
         float: right;
+    }
+    .left,.right{
+        input[type=text]{
+            width:auto ;
+        }
     }
 }

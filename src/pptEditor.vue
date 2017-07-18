@@ -2,25 +2,28 @@
     <div class="pages" ref="pages">
         <!-- 工具栏 -->
         <div class="contorl" v-show="!isPreview">
-            <span :class="(item=='pen'&&isDraw)?'active jk-'+item:'jk-'+item" v-for="item in controls" :key="item" @click="setControl(item)"></span>
+            <span :class="(item=='pen'&&isDraw)?'active jk-'+item:'jk-'+item" v-for="item in controls" @click="setControl(item)"></span>
         </div>
         <!--画板-->
-        <div draggable="true" :class="item.active?'draw-box active':'draw-box'" v-for="(item,index) in pages" :key="item" ref="drawbox" :width="width" :height="height" :isPreview="isPreview" @mouseup="showMenu(item.active,$event)">
-            <div class="view" v-show="!item.active&&!isPreview" :style="'width:'+width+'px;height:'+height+'px;'" @click="activeCanvas(index)">
+        <div draggable="true" :class="item.active?'draw-box active':'draw-box'" v-for="(item,index) in pages" ref="drawbox" :width="width" :height="height" :isPreview="isPreview" @mouseup="showMenu(item.active,$event)">
+            <div class="view" v-show="!item.active&&!isPreview" :style="'width:'+width+'px;height:'+height+'px;'" @click="activeCanvas(index,$event)">
                 <span>单击编辑</span>
             </div>
             <canvas :id="'canvas-'+index" :width="width" :height="height"></canvas>
         </div>
         <!--属性-->
-        <div class="prop-box" v-show="!isPreview">
-            <span :class="`jk-${item}`" v-for="item in props" :key="item" @click.stop="setProp(item)">
+        <div class="prop-box" v-show="!isPreview" :style="'top:'+((height*1+32)*activeIndex+11)+'px;'">
+            <span :class="`jk-${item}`" v-for="item in props" @click.stop="setProp(item)" @mousemove="propType=item">
+                <div class="colorbox" v-if="'fill stroke'.indexOf(item)>-1">
+                    <colorPiker @change="colorChange" />
+                </div>
                 <div class="fonts" v-if="item == 'text'">
-                    <span v-for="f in fonts" :key="f" @click.stop="setProp(item,f)">{{f}}</span>
+                    <span v-for="f in fonts" @click.stop="setProp(item,f)">{{f}}</span>
                 </div>
                 <div class="range" v-if="'font opacity border lineheight charspacing'.indexOf(item)>-1">
                     <input type="range" v-if="item=='font'" min="12" max="100" step="1" @input="setProp(item,$event)">
                     <input type="range" v-if="item=='opacity'" min="0" max="1" step="0.1" @input="setProp(item,$event)">
-                    <input type="range" v-if="item=='border'" min="1" max="30" step="1" @input="setProp(item,$event)">
+                    <input type="range" v-if="item=='border'" value="1" min="1" max="30" step="1" @input="setProp(item,$event)">
                     <input type="range" v-if="item=='lineheight'" min="0" max="10" step="0.1" @input="setProp(item,$event)">
                     <input type="range" v-if="item=='charspacing'" min="-200" max="800" step="10" @input="setProp(item,$event)">
                 </div>
@@ -28,7 +31,7 @@
         </div>
         <!--菜单-->
         <menu class="contextMenu" ref="contextMenu" v-show="contextMenuShow">
-            <li v-for="menu in contextMenu" @click="excue(menu.shortcut)" :key="menu">
+            <li v-for="menu in contextMenu" @click="excue(menu.shortcut)">
                 {{menu.text}}
                 <span class="shortcut">{{menu.value}}</span>
             </li>
@@ -41,9 +44,12 @@
 import qdraw from 'qdraw'
 import draw from './draw'
 import compUI from './compUI'
+import history from './history'
+
+import colorPiker from 'color-picker-vue'
 
 export default {
-    components: { compUI },
+    components: { compUI, colorPiker },
     name: 'pptEditor',
     props: {
         'width': {
@@ -68,8 +74,7 @@ export default {
     data() {
         return {
             showShiTiBox: false, showImgBox: false, showSvgBox: false, showVideoBox: false, showTableBox: false,
-            jsonData: [],
-            props: [],
+            jsonData: [], props: [], activeIndex: 0, propType: '',
             propText: [
                 'undo', 'redo', 'bold', 'italic', 'underline', 'linethrough', 'text',
                 'font', 'lineheight', 'charspacing', 'alignleft', 'alignright', 'aligncenter', 'alignjustify',
@@ -80,9 +85,7 @@ export default {
             group: ['undo', 'redo', 'groupleft', 'groupright', 'grouptop', 'groupbottom', 'groupcenterv', 'groupcenterh', 'groupvertical', 'grouphorizontal', 'remove', 'lock'],
             isDraw: false,
             controls: ['info', 'plus', 'minus', 'pen', 'text', 'image', 'shape', 'line', 'table', 'media', 'book', 'view'],
-            canvas: '',
-            draws: [],
-            pages: [{ active: true }],
+            canvas: '', draws: [], pages: [{ active: true }],
             contextMenuShow: false,
             contextMenu: [
                 { text: '剪切', value: '⌘X', shortcut: 'cut' },
@@ -187,29 +190,29 @@ export default {
         }
         document.onkeydown = (e) => {
             let key = e.keyCode
-            // console.log(e)
-            let obj = draw.getSelected()
-            if (obj) {
-                if (key == 46 || key == 8) {
-                    draw.removeSelected()
-                }
-                if (e.ctrlKey)  //shift +ctrl
-                {
-                    if (e.shiftKey) {
-                        if (key == 38) { draw.bringToFront(); }
-                        if (key == 40) { draw.sendToBack(); }
-                        return;
-                    }
-                    if (key == 38) { draw.bringForward(); }
-                    if (key == 40) { draw.sendBackwards(); }
-                    if (key == 76) { draw.toggleLock(); }
+            if (key == 46 || key == 8) {
+                draw.removeSelected()
+                return
+            }
+            // let obj = draw.getSelected()
+            // if (obj) {
+            if (e.ctrlKey)  //shift +ctrl
+            {
+                if (e.shiftKey) {
+                    if (key == 38) { draw.bringToFront(); }
+                    if (key == 40) { draw.sendToBack(); }
                     return;
                 }
-                if (key == 37) { let x = obj.left - 10; draw.setLeft(x) }
-                if (key == 38) { let y = obj.top - 10; draw.setTop(y) }
-                if (key == 39) { let x = obj.left + 10; draw.setLeft(x) }
-                if (key == 40) { let y = obj.top + 10; draw.setTop(y) }
+                if (key == 38) { draw.bringForward(); }
+                if (key == 40) { draw.sendBackwards(); }
+                if (key == 76) { draw.toggleLock(); }
+                return;
             }
+            if (key == 37) { let x = obj.left - 10; draw.setLeft(x) }
+            if (key == 38) { let y = obj.top - 10; draw.setTop(y) }
+            if (key == 39) { let x = obj.left + 10; draw.setLeft(x) }
+            if (key == 40) { let y = obj.top + 10; draw.setTop(y) }
+            // }
 
         }
         document.ondragover = (e) => {
@@ -237,6 +240,9 @@ export default {
         // }
     },
     methods: {
+        colorChange(v) {
+            this.propType == 'fill' ? draw.setFill(v) : draw.setStroke(v)
+        },
         cancelSelect(v) {
             this.draws.map((x) => {
                 x.isPreview = v
@@ -292,6 +298,10 @@ export default {
         },
         updateJosn() {
             // this.$emit('getDataJson', '此被废弃 ，因为非常耗内存 请使用 getJsonData')
+            setTimeout(() => {
+                // console.log()
+                history.update(JSON.stringify(this.canvas))
+            }, 500);
             return;
             //此被废弃 ，因为非常耗内存 请使用 getJsonData 
             if (this.draws.length > 0) {
@@ -343,7 +353,7 @@ export default {
                 case 'plus': this.addPage(); break;
                 case 'minus': this.removePage(); break;
                 case 'rotate': draw.setActiveProp('angle', draw.getActiveProp('angle') + 90); break;
-                case 'pen': this.isDraw = !this.isDraw; this.setPenModel(this.isDraw); break;
+                case 'pen': this.isDraw = !this.isDraw; this.draw.setFreeDrawingMode(this.isDraw); break;
                 case 'text': this.addComponent('Textbox'); break;
                 case 'image': this.showImgBox = true; break;
                 case 'shape': this.showSvgBox = true; break;
@@ -356,11 +366,17 @@ export default {
             }
             this.cancelSelect(false)
         },
-        activeCanvas(index) {
+        activeCanvas(index, event) {
+            // let c = this.pages.filter(x => x.active == true)[0]
+            // let _index = this.pages.indexOf(c)
+            // console.log(index)
             this.pages.map(x => x.active = false)
             this.pages[index].active = true
-            draw.init(this.draws[index])
-            this.setPenModel(this.isDraw)
+            this.canvas = this.draws[index]
+            draw.init(this.canvas)
+            draw.setFreeDrawingMode(this.isDraw)
+            this.activeIndex = index
+            history.init(this.canvas)
         },
         toggleProp(type) {
             let align = 'Left'
@@ -376,7 +392,7 @@ export default {
                 case 'aligncenter': draw.setActiveProp('textAlign', 'center'); break;
                 case 'alignjustify': draw.setActiveProp('textAlign', 'justify'); break;
             }
-            // updateJosn()
+            this.updateJosn()
         },
         setAlign(name, g) {
             // let ls = g.map((x) => { return { l: x.left, r: x.left + x.width, t: x.top, b: x.top + x.height } })
@@ -442,6 +458,10 @@ export default {
             draw.render()
         },
         setProp(name, event) {
+            if ('undo redo'.indexOf(name) > -1) {
+                name == 'redo' ? history.redo() : history.undo()
+                return;
+            }
             let obj = draw.getSelected()
             let g = draw.getSelectedGroup()
             if (!obj && !g) return
@@ -479,7 +499,7 @@ export default {
                 this.toggleProp(name)
             }
             // draw.setActiveProp(name, value)
-            // this.updateJosn()
+            this.updateJosn()
         },
         addPage(i) {
             i = i || 1  //for 里面使用闭包传入默认为1
@@ -495,7 +515,8 @@ export default {
                 //   console.log(index)
                 let id = `canvas-${index}`
                 let canvas = new qdraw.Canvas(id)
-                this.draws.splice(index, 0, canvas)
+                // this.draws.splice(index, 0, canvas)
+                this.draws.push(canvas)
             }, 500 * i, index);
         },
         removePage(index) {
@@ -605,6 +626,8 @@ export default {
         },
         showMenu(active, event) {
             if (this.isPreview || !active) return
+            this.updateJosn()
+
             if (event.button == 0) {
                 setTimeout(() => {
                     let obj = draw.getSelected()
@@ -627,11 +650,6 @@ export default {
                 //    event.stopPropagation();
                 return
             }
-
-            //this.updateJosn()
-        },
-        setPenModel(isDraw) {
-            draw.setFreeDrawingMode(isDraw)
         },
         save(type) {
             type == 'pdf' ? '' : ''
@@ -667,6 +685,7 @@ export default {
         canvas.isPreview = this.isPreview
         this.canvas = canvas
         draw.init(canvas)
+        history.init(canvas)
         this.draws.push(canvas)
 
     },
@@ -675,5 +694,5 @@ export default {
 </script>
 
 <style lang="less">
-@import 'edit.less';
+@import './assets/edit.less';
 </style>
