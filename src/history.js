@@ -17,11 +17,12 @@ h.histemp = []
 h.init = (canvas) => {
   h.canvas = canvas
   h.histemp = []
+  h.hisIndex = -1
 }
 h.update = (canvas) => {
   if (h.histemp[h.histemp.length] !== canvas) {
     h.histemp.push(canvas)
-    h.hisIndex = h.histemp.length
+    h.hisIndex = h.histemp.length - 1
   }
   if (h.histemp.length > 10) {
     h.histemp.splice(0, h.histemp.length - 10)
