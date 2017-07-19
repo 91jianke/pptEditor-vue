@@ -9,7 +9,7 @@
             <div class="view" v-show="!item.active&&!isPreview" :style="'width:'+width+'px;height:'+height+'px;'" @click="activeCanvas(index,$event)">
                 <span>单击编辑</span>
             </div>
-            <canvas :id="'canvas-'+index" :width="width" :height="height"></canvas>
+            <canvas :id="item.id" :width="width" :height="height"></canvas>
         </div>
         <!--属性-->
         <div class="prop-box" v-show="!isPreview" :style="'top:'+((height*1+32)*activeIndex+11)+'px;'">
@@ -85,7 +85,7 @@ export default {
             group: ['undo', 'redo', 'groupleft', 'groupright', 'grouptop', 'groupbottom', 'groupcenterv', 'groupcenterh', 'groupvertical', 'grouphorizontal', 'remove', 'lock'],
             isDraw: false,
             controls: ['info', 'plus', 'minus', 'pen', 'text', 'image', 'shape', 'line', 'table', 'media', 'book', 'view'],
-            canvas: '', draws: [], pages: [{ active: true }],
+            canvas: '', draws: [], pages: [{ active: true, id: `canvas-${new Date() * 1}` }],
             contextMenuShow: false,
             contextMenu: [
                 { text: '剪切', value: '⌘X', shortcut: 'cut' },
@@ -348,12 +348,13 @@ export default {
             this.isFullScreen = !this.isFullScreen
         },
         setControl(item, obj) {
+
             switch (item) {
                 case 'info': break;
                 case 'plus': this.addPage(); break;
                 case 'minus': this.removePage(); break;
                 case 'rotate': draw.setActiveProp('angle', draw.getActiveProp('angle') + 90); break;
-                case 'pen': this.isDraw = !this.isDraw; this.draw.setFreeDrawingMode(this.isDraw); break;
+                case 'pen': this.isDraw = !this.isDraw; draw.setFreeDrawingMode(this.isDraw); break;
                 case 'text': this.addComponent('Textbox'); break;
                 case 'image': this.showImgBox = true; break;
                 case 'shape': this.showSvgBox = true; break;
@@ -364,6 +365,7 @@ export default {
                 case 'view': this.toggleFullScreent(this.$refs.drawbox[1]); break;
                 case 'fullscreen': this.toggleFullScreent(this.$refs.pages); break;
             }
+            item!='pen' &&(this.isDraw = false,draw.setFreeDrawingMode(false))
             this.cancelSelect(false)
         },
         activeCanvas(index, event) {
@@ -508,16 +510,12 @@ export default {
             //   this.pages.splice(index, 0, { active: false })
 
             //强暴插入
-            this.pages.push({ active: false })
-            let index = this.pages.length - 1
-
-            setTimeout((index) => {
-                //   console.log(index)
-                let id = `canvas-${index}`
+            let id = `canvas-${new Date() * 1}`
+            this.pages.push({ active: false, id: id })
+            setTimeout((id) => {
                 let canvas = new qdraw.Canvas(id)
-                // this.draws.splice(index, 0, canvas)
                 this.draws.push(canvas)
-            }, 500 * i, index);
+            }, 300, id);
         },
         removePage(index) {
             let deleteIndex = 0
@@ -664,7 +662,14 @@ export default {
                             this.draws[i].renderAll()
                         })
                     } else {
-                        this.addPage(i)
+                        setTimeout(() => {
+                            let id = `canvas-${new Date() * 1}`
+                            this.pages.push({ active: false, id: id })
+                        }, 100 * i);
+                        setTimeout((i, j) => {
+                            let canvas = new qdraw.Canvas(this.pages[i].id)
+                            this.draws.push(canvas)
+                        }, 300 * i, i, j);
                         setTimeout((i, j) => {
                             //   console.log(i, 'index')
                             this.draws[i].loadFromJSON(j, () => {
@@ -680,14 +685,15 @@ export default {
         }
     },
     mounted() {
-        let canvas = new qdraw.Canvas('canvas-0');
+        // let id = `canvas-${new Date() * 1}`
+        // this.pages.push({ active: true, id: `canvas-${new Date() * 1}` })
+        let canvas = new qdraw.Canvas(this.pages[0].id);
         // console.log('isPreview', this.isPreview)
         canvas.isPreview = this.isPreview
         this.canvas = canvas
         draw.init(canvas)
         history.init(canvas)
         this.draws.push(canvas)
-
     },
 
 }

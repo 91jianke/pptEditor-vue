@@ -678,11 +678,8 @@ const setActiveStyle = function (styleName, value, object) {
 }
 // 锁定
 {
-  draw.isLock = () => {
-    return getActiveProp('lockScalingY')
-  }
   draw.toggleLock = () => {
-    let value = !getActiveProp('lockScalingY')
+    let value = !getActiveProp('lockRotation')
     setActiveProp('lockMovementX', value)
     setActiveProp('lockMovementY', value)
     setActiveProp('lockScalingX', value)
