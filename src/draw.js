@@ -980,6 +980,7 @@ draw.consoleValue = consoleValue
   }
   draw.group = () => {
     let x = canvas.getActiveGroup()
+    if (!x.getObjects) return
     let y = x.getObjects()
     let groups = []
     y.map((x) => {
@@ -996,7 +997,6 @@ draw.consoleValue = consoleValue
   draw.ungroup = () => {
     let o = canvas.getActiveObject()
     if (!o.getObjects) return
-    console.log(o)
     let data = JSON.parse(JSON.stringify(o.getObjects()))
     data.map((x) => {
       x.skewX = o.skewX
@@ -1013,8 +1013,6 @@ draw.consoleValue = consoleValue
       x.left < 0 && (x.left = 100)
       x.top < 0 && (x.top = 100)
     })
-    console.log(data)
-
     canvas.loadObjFormJson(data)
     draw.removeSelected()
     return

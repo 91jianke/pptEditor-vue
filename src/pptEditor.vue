@@ -215,7 +215,6 @@ export default {
             this.isFullScreen = !this.isFullScreen
         },
         setControl(item, obj) {
-
             switch (item) {
                 case 'info': break;
                 case 'plus': this.addPage(); break;
