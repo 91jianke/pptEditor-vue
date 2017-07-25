@@ -14,7 +14,7 @@
         <!--属性-->
         <div class="prop-box" v-show="!isPreview" :style="'top:'+((height*1+32)*activeIndex+11)+'px;'">
             <span :class="`jk-${item}`" v-for="item in props" @click.stop="setProp(item)" @mousemove="propType=item">
-                <div class="colorbox" v-if="'fill stroke'.indexOf(item)>-1">
+                <div class="colorbox" v-if="'fill stroke back'.indexOf(item)>-1">
                     <colorPiker @change="colorChange" />
                 </div>
                 <div class="fonts" v-if="item == 'text'">
@@ -78,11 +78,11 @@ export default {
             propText: [
                 'undo', 'redo', 'bold', 'italic', 'underline', 'linethrough', 'text',
                 'font', 'lineheight', 'charspacing', 'alignleft', 'alignright', 'aligncenter', 'alignjustify',
-                'fill', 'stroke', 'opacity', 'border',
+                'fill', 'stroke', 'back', 'opacity', 'border',
                 'flipx', 'flipy', 'remove', 'lock'
             ],
-            static: ['undo', 'redo', 'fill', 'stroke', 'opacity', 'border', 'flipx', 'flipy', 'remove', 'lock'],
-            group: ['undo', 'redo', 'groupleft', 'groupright', 'grouptop', 'groupbottom', 'groupcenterv', 'groupcenterh', 'groupvertical', 'grouphorizontal', 'remove', 'lock'],
+            static: ['undo', 'redo', 'fill', 'stroke', 'back', 'opacity', 'border', 'flipx', 'flipy', 'group', 'ungroup', 'remove', 'lock'],
+            group: ['undo', 'redo', 'groupleft', 'groupright', 'grouptop', 'groupbottom', 'groupcenterv', 'groupcenterh', /* 'groupvertical', 'grouphorizontal', */'group', 'ungroup', 'remove', 'lock'],
             isDraw: false,
             controls: ['info', 'plus', 'minus', 'pen', 'text', 'image', 'shape', 'line', 'table', 'media', 'book', 'view'],
             canvas: '', draws: [], pages: [{ active: true, id: `canvas-${new Date() * 1}` }],
@@ -93,6 +93,8 @@ export default {
                 { text: '粘贴', value: '⌘V', shortcut: 'paste' },
                 { text: '删除', value: '⌫', shortcut: 'delete' },
                 { text: '锁定/解锁', value: '⌘L', shortcut: 'lock' },
+                { text: '组合', value: '⌘G', shortcut: 'group' },
+                { text: '拆分', value: '⌘↑G', shortcut: 'ungroup' },
                 { text: '上移', value: '⌘↑', shortcut: 'moveup' },
                 { text: '下移', value: '⌘↓', shortcut: 'movedown' },
                 { text: '顶层', value: '⌘⇧↑', shortcut: 'movefront' },
@@ -106,7 +108,7 @@ export default {
                 'Frutiger', 'Futura', 'Gill Sans', 'Georgia', 'Garamond', 'Hoefler Text', 'Helvetica Neue', 'Helvetica', 'Impact', 'Monaco',
                 'Myriad pro', 'Officina', 'Optima', 'Plaster', 'PingFang SC', 'Roman', 'Times', 'Tahoma', 'Univers', 'Vani', 'Verdanna', // 常用英文字体
             ],
-            objStyle: {}, copyData: [], copyPos: 10, isFullScreen: false,
+            objStyle: {}, copyData: [], isFullScreen: false,
         }
     },
     beforeMount() {
@@ -116,132 +118,26 @@ export default {
         addStyle.rel = "stylesheet";
         addStyle.type = "text/css";
         addStyle.media = "screen";
-        addStyle.href = '//at.alicdn.com/t/font_endpuw7m5fxn7b9.css';
+        addStyle.href = '//at.alicdn.com/t/font_i13gsnet55pl23xr.css';
         container.appendChild(addStyle);
     },
     created() {
-        document.oncontextmenu = (e) => {
-            e.preventDefault();
-        };
-        document.onpaste = (e) => {
-            e.preventDefault();
-            // console.log('执行paste', e)
-            let board = e.clipboardData
-            // 取粘贴板图片
-            var i = 0, items, item, types;
-            items = board.items
-            if (!items) {
-                return;
-            }
-            item = items[0];
-            types = board.types || [];
-            for (; i < types.length; i++) {
-                if (types[i] === 'Files') {
-                    item = items[i];
-                    break;
-                }
-            }
-
-            // 判断是否为图片数据
-            if (item && item.kind === 'file' && item.type.match(/^image\//i)) {
-                // 读取该图片            
-                var file = item.getAsFile()
-                var reader = new FileReader()
-                reader.onload = (e) => {
-                    let o = { src: e.target.result, zoomX: 1, zoomY: 1 }
-                    draw.addImage(o)
-                }
-                reader.readAsDataURL(file)
-                return
-            }
-            let data = board.getData('text')
-
-            // console.log( data)
-            let obj = {}
-            try {
-                obj = JSON.parse(data)
-            } catch (e) { }
-            this.paste(obj, this.copyPos)
-        };
-        const copy = (e, iscut) => {
-            this.copyPos = 10
-            let board = e.clipboardData || window.clipboardData
-            let prop = draw.getObjStyle()
-            if (prop) {
-                this.copyData = prop
-                board.setData('text', JSON.stringify(prop));
-                iscut && draw.removeSelected();
-            }
-        }
-        document.oncopy = (e) => {
-            e.preventDefault();
-            copy(e)
-        };
-        document.oncut = (e) => {
-            e.preventDefault();
-            copy(e, true)
-            /*setTimeout(() => {// 递归用延时执行
-                document.execCommand('copy');
-                console.log('ss')
-            }, 1000);*/
-        }
-        document.onclick = () => {
-            this.contextMenuShow = false
-        }
-        document.onkeydown = (e) => {
-            let key = e.keyCode
-            if (key == 46 || key == 8) {
-                draw.removeSelected()
-                return
-            }
-            // let obj = draw.getSelected()
-            // if (obj) {
-            if (e.ctrlKey)  //shift +ctrl
-            {
-                if (e.shiftKey) {
-                    if (key == 38) { draw.bringToFront(); }
-                    if (key == 40) { draw.sendToBack(); }
-                    return;
-                }
-                if (key == 38) { draw.bringForward(); }
-                if (key == 40) { draw.sendBackwards(); }
-                if (key == 76) { draw.toggleLock(); }
-                return;
-            }
-            if (key == 37) { let x = obj.left - 10; draw.setLeft(x) }
-            if (key == 38) { let y = obj.top - 10; draw.setTop(y) }
-            if (key == 39) { let x = obj.left + 10; draw.setLeft(x) }
-            if (key == 40) { let y = obj.top + 10; draw.setTop(y) }
-            // }
-
-        }
-        document.ondragover = (e) => {
-            e.preventDefault();
-        }
-        document.ondrop = (e) => {
-            e.preventDefault();
-            var fs = e.dataTransfer.files;
-            // console.log(fs,e.dataTransfer)
-            for (var i = 0; i < fs.length; i++) {
-                if (fs[i].type.indexOf('image') != -1) {
-                    var reader = new FileReader();
-                    reader.onload = (y) => {
-                        // console.log(y)
-                        let o = { src: y.target.result, zoomX: 1, zoomY: 1 }
-                        draw.addImage(o)
-                    }
-                    reader.readAsDataURL(fs[i]);
-                }
-            }
-            // console.log(e.dataTransfer)
-        }
-        // if (this.imageList.length == 0) {
-        //     this.getImageCategory()
-        // }
+        document.oncontextmenu = (e) => { e.preventDefault(); }
+        document.onpaste = (e) => { draw.paste(e) }
+        document.oncopy = (e) => { this.copyData = draw.copy(e) }
+        document.oncut = (e) => { e.preventDefault();this.copyData = draw.copy(e, true) }
+        document.onclick = () => { this.contextMenuShow = false }
+        document.onkeydown = (e) => { draw.keydown(e) }
+        document.ondragover = (e) => { e.preventDefault() }
+        document.ondrop = (e) => { draw.ondrop(e) }
     },
     methods: {
         colorChange(v) {
-            this.propType == 'fill' ? draw.setFill(v) : draw.setStroke(v)
+            switch (this.propType) {
+                case 'fill': draw.setFill(v); break;
+                case 'stroke': draw.setStroke(v); break;
+                case 'back': draw.setBgColor(v); break;
+            }
         },
         cancelSelect(v) {
             this.draws.map((x) => {
@@ -313,36 +209,7 @@ export default {
                 })
                 this.$emit('getDataJson', this.jsonData)
             }
-        },
-        paste(data, x) {
-            let ps = (obj) => {
-                if (obj) {
-                    obj.left += x
-                    obj.top += x
-                }
-                if (obj.text) { //text
-                    draw.addTextbox(obj)
-                }
-                if (obj.d || obj.path) { //svg
-                    // console.log(obj)
-                    draw.createSVG(obj)
-                }
-                if (obj.src) { // image
-                    draw.addImage(obj)
-                }
-                if (obj.type) { // shape
-                    this.addShape(obj)
-                }
-            }
-            if (data.left) {
-                ps(data)
-            } else if (data.length > 0) {
-                data.map((x) => {
-                    ps(x)
-                })
-            }
-            this.copyPos += 10;
-        },
+        }, 
         toggleFullScreent(ele) {
             !this.isFullScreen ? draw.fullScreen(ele) : draw.exitFullscreen();
             this.isFullScreen = !this.isFullScreen
@@ -365,7 +232,7 @@ export default {
                 case 'view': this.toggleFullScreent(this.$refs.drawbox[1]); break;
                 case 'fullscreen': this.toggleFullScreent(this.$refs.pages); break;
             }
-            item!='pen' &&(this.isDraw = false,draw.setFreeDrawingMode(false))
+            item != 'pen' && (this.isDraw = false, draw.setFreeDrawingMode(false))
             this.cancelSelect(false)
         },
         activeCanvas(index, event) {
@@ -460,6 +327,10 @@ export default {
             draw.render()
         },
         setProp(name, event) {
+            if ('group ungroup'.indexOf(name) > -1) {
+                name == 'group' ? draw.group() : draw.ungroup()
+                return;
+            }
             if ('undo redo'.indexOf(name) > -1) {
                 name == 'redo' ? history.redo() : history.undo()
                 return;
@@ -469,7 +340,6 @@ export default {
             if (!obj && !g) return
             //group 
             if ('groupleft groupright grouptop groupbottom groupcenterv groupcenterh groupvertical grouphorizontal'.indexOf(name) > -1) {
-                // console.log(g)
                 this.setAlign(name, g.getObjects())
                 return
             }
@@ -538,9 +408,11 @@ export default {
             switch (type) {
                 case 'cut': document.execCommand('cut'); break;
                 case 'copy': document.execCommand('copy'); break;
-                case 'paste': this.paste(this.copyData, this.copyPos);/*document.execCommand('paste');*/ break;
+                case 'paste': let obj = JSON.parse(this.copyData);this.canvas.loadObjFormJson(obj);break;
                 case 'delete': draw.removeSelected(); break;
                 case 'lock': draw.toggleLock(); break;
+                case 'group': draw.group(); break;
+                case 'ungroup': draw.ungroup(); break;
                 case 'moveup': draw.bringForward(); break;
                 case 'movedown': draw.sendBackwards(); break;
                 case 'movefront': draw.bringToFront(); break;
@@ -607,9 +479,7 @@ export default {
                 case 'Textbox': draw.addTextbox({ text: '双击修改文字', fontSize: 14, left: 20, top: 20 })
                     break
                 case 'video':
-                    let svg = draw.createVideo(item.src)
-                    // console.log(svg)
-                    draw.loadSVGWithoutGrouping(svg)
+                    // draw.createVideo(item.src)
                     break
                 case 'image': draw.addImage({ src: item.src, }); break;
             }
@@ -638,7 +508,7 @@ export default {
                 event.preventDefault();
                 let menu = this.$refs.contextMenu
                 // (212,293)
-                let y = document.body.clientHeight - event.clientY > 293 ? event.clientY : event.clientY - 283
+                let y = document.body.clientHeight - event.clientY > 378 ? event.clientY : event.clientY - 378
                 let x = document.body.clientWidth - event.clientX > 212 ? event.clientX : event.clientX - 202
                 menu.style.left = x + 'px'
                 menu.style.top = y + 'px'

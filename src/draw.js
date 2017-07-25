@@ -6,6 +6,7 @@
  */
 
 import qdraw from 'qdraw'
+let clone = qdraw.util.object.clone
 
 let draw = {}
 
@@ -18,7 +19,7 @@ const pad = function (str, length) {
   }
   return str
 }
-const getRandomColor = function () {
+const getRandomColor = () => {
   return (
     pad(getRandomInt(0, 255).toString(16), 2) +
     pad(getRandomInt(0, 255).toString(16), 2) +
@@ -26,7 +27,7 @@ const getRandomColor = function () {
   )
 }
 
-const getRandomLeftTop = function () {
+const getRandomLeftTop = () => {
   var offset = 50
   return {
     left: qdraw.util.getRandomInt(0 + offset, 700 - offset),
@@ -66,7 +67,7 @@ draw.init = (_canvas) => {
   //   mouseLeft = options.e.x
   //   mouseTop = options.e.y
   //   _drawSelection = canvas._drawSelection
-  //   canvas._drawSelection = function () {}
+  //   canvas._drawSelection = () => {}
   // })
   /* .on('mouse:wheel', (opt) => { // 鼠标滚轮缩放
     var e = opt.e
@@ -178,177 +179,193 @@ const setActiveStyle = function (styleName, value, object) {
   //   // doc.save('demo-file.pdf')
   // }
   
-  draw.getOpacity = function () {
+  draw.getOpacity = () => {
     return getActiveStyle('opacity') //*100
   }
-  draw.setOpacity = function (value) {
+  draw.setOpacity = (value) => {
     setActiveStyle('opacity', parseFloat(value, 10)) /// 100)
   }
-  draw.getFill = function () {
+  draw.getFill = () => {
     return getActiveStyle('fill')
   }
-  draw.setFill = function (value) {
+  draw.setFill = (value) => {
     setActiveStyle('fill', value)
   }
-  draw.isBold = function () {
+  draw.isBold = () => {
     return getActiveStyle('fontWeight') === 'bold'
   }
-  draw.toggleBold = function () {
+  draw.toggleBold = () => {
     setActiveStyle('fontWeight',
       getActiveStyle('fontWeight') === 'bold' ? '' : 'bold')
   }
-  draw.isItalic = function () {
+  draw.isItalic = () => {
     return getActiveStyle('fontStyle') === 'italic'
   }
-  draw.toggleItalic = function () {
+  draw.toggleItalic = () => {
     setActiveStyle('fontStyle',
       getActiveStyle('fontStyle') === 'italic' ? '' : 'italic')
   }
-  draw.toggleFlipX = function () {
+  draw.toggleFlipX = () => {
     setActiveProp('flipX',!canvas.getActiveObject().flipX )
   }
-  draw.toggleFlipY = function () {
+  draw.toggleFlipY = () => {
     setActiveProp('flipY',!canvas.getActiveObject().flipY )
   }
-  draw.isUnderline = function () {
+  draw.isUnderline = () => {
     return getActiveStyle('textDecoration').indexOf('underline') > -1
   }
-  draw.toggleUnderline = function () {
+  draw.toggleUnderline = () => {
     var value = draw.isUnderline() ? getActiveStyle('textDecoration').replace('underline', '') : (getActiveStyle('textDecoration') + ' underline')
 
     setActiveStyle('textDecoration', value)
   }
 
-  draw.isLinethrough = function () {
+  draw.isLinethrough = () => {
     return getActiveStyle('textDecoration').indexOf('line-through') > -1
   }
-  draw.toggleLinethrough = function () {
+  draw.toggleLinethrough = () => {
     var value = draw.isLinethrough() ? getActiveStyle('textDecoration').replace('line-through', '') : (getActiveStyle('textDecoration') + ' line-through')
 
     setActiveStyle('textDecoration', value)
   }
-  draw.isOverline = function () {
+  draw.isOverline = () => {
     return getActiveStyle('textDecoration').indexOf('overline') > -1
   }
-  draw.toggleOverline = function () {
+  draw.toggleOverline = () => {
     var value = draw.isOverline() ? getActiveStyle('textDecoration').replace('overline', '') : (getActiveStyle('textDecoration') + ' overline')
 
     setActiveStyle('textDecoration', value)
   }
-  draw.setLeft = function (value) {
+  draw.setLeft = (value) => {
     return setActiveProp('left', value - 0)
   }
-  draw.setTop = function (value) {
+  draw.setTop = (value) => {
     return setActiveProp('top', value - 0)
   }
-  draw.getLeft = function () {
+  draw.getLeft = () => {
     return getActiveProp('left')
   }
-  draw.getTop = function () {
+  draw.getTop = () => {
     return getActiveProp('top')
   }
-  draw.getText = function () {
+  draw.getText = () => {
     return getActiveProp('text')
   }
-  draw.setText = function (value) {
+  draw.setText = (value) => {
     setActiveProp('text', value)
   }
 
-  draw.getTextAlign = function () {
+  draw.getTextAlign = () => {
     return capitalize(getActiveProp('textAlign'))
   }
-  draw.setTextAlign = function (value) {
+  draw.setTextAlign = (value) => {
     setActiveProp('textAlign', value.toLowerCase())
   }
 
-  draw.getFontFamily = function () {
+  draw.getFontFamily = () => {
     return getActiveProp('fontFamily').toLowerCase()
   }
-  draw.setFontFamily = function (value) {
+  draw.setFontFamily = (value) => {
     setActiveProp('fontFamily', value.toLowerCase())
   }
 
-  draw.getBgColor = function () {
+  draw.getBgColor = () => {
     return getActiveProp('backgroundColor')
   }
-  draw.setBgColor = function (value) {
+  draw.setBgColor = (value) => {
     setActiveProp('backgroundColor', value)
   }
 
-  draw.getTextBgColor = function () {
+  draw.getTextBgColor = () => {
     return getActiveProp('textBackgroundColor')
   }
-  draw.setTextBgColor = function (value) {
+  draw.setTextBgColor = (value) => {
     setActiveProp('textBackgroundColor', value)
   }
 
-  draw.getStroke = function () {
+  draw.getStroke = () => {
     return getActiveStyle('stroke')
   }
-  draw.setStroke = function (value) {
+  draw.setStroke = (value) => {
     setActiveStyle('stroke', value)
   }
 
-  draw.getStrokeWidth = function () {
+  draw.getStrokeWidth = () => {
     return parseInt(getActiveStyle('strokeWidth'))
   }
-  draw.setStrokeWidth = function (value) {
+  draw.setStrokeWidth = (value) => {
     setActiveStyle('strokeWidth', parseInt(value, 10))
   }
 
-  draw.getFontSize = function () {
+  draw.getFontSize = () => {
     return getActiveStyle('fontSize')
   }
-  draw.setFontSize = function (value) {
+  draw.setFontSize = (value) => {
     setActiveStyle('fontSize', parseInt(value, 10))
   }
 
-  draw.getLineHeight = function () {
+  draw.getLineHeight = () => {
     return getActiveStyle('lineHeight')
   }
-  draw.setLineHeight = function (value) {
+  draw.setLineHeight = (value) => {
     setActiveStyle('lineHeight', parseFloat(value, 10))
   }
-  draw.getCharSpacing = function () {
+  draw.getCharSpacing = () => {
     return getActiveStyle('charSpacing')
   }
-  draw.setCharSpacing = function (value) {
+  draw.setCharSpacing = (value) => {
     setActiveStyle('charSpacing', value)
   }
 
-  draw.getBold = function () {
+  draw.getBold = () => {
     return getActiveStyle('fontWeight')
   }
-  draw.setBold = function (value) {
+  draw.setBold = (value) => {
     setActiveStyle('fontWeight', value ? 'bold' : '')
   }
 
-  draw.getCanvasBgColor = function () {
+  draw.getCanvasBgColor = () => {
     return canvas.backgroundColor
   }
-  draw.setCanvasBgColor = function (value) {
+  draw.setCanvasBgColor = (value) => {
     canvas.backgroundColor = value
     canvas.renderAll()
   }
   draw.createVideo = (url) => {
-    let svg = `<svg xmlns="http://www.w3.org/2000/svg" ><svg>
+    let v = document.createElement('video')
+    // document.body.appendChild(v)
+    v.src = url
+    var video = new qdraw.Image(v, {
+      // left: 50,
+      // top: 50,
+      originX: 'center',
+      originY: 'center'
+    }); 
+    canvas.add(video);
+    video.getElement().play();
+    qdraw.util.requestAnimFrame(function render() {
+      canvas.renderAll();
+      qdraw.util.requestAnimFrame(render);
+    });
+    /* let svg = `<svg xmlns="http://www.w3.org/2000/svg" ><svg>
                     <foreignobject x="0" y="0" width="200" height="120">
                       <video src="${url}" class="video" controls="controls"></video></svg>
                     </foreignobject>
                   </svg>`
-    return svg
+    return svg */
   }
   draw.createSVG = (o) => {
     // console.log(o)
 
     let d = o.d || o.path
-    let stroke = o.stroke || '#000000F'
+    let stroke = o.stroke || '#000000 '
     let strokeWidth = o.strokeWidth || 1
     let width = o.width || 100
     let height = o.height || 100
     let angle = o.angle || 0
+    let svg = ''
     if (d) {
-      let svg = `<svg xmlns="http://www.w3.org/2000/svg" >
+      svg = `<svg xmlns="http://www.w3.org/2000/svg" >
                     <svg>
                       <path fill="${!o.d?'none':o.fill}" transform="scale(${o.zoomX} ${o.zoomY}) translate(${o.skewX} ${o.skewY}) rotate(${angle})" stroke="${stroke}" stroke-width="${strokeWidth}" d="${d}"></path>
                     </svg>
@@ -356,9 +373,9 @@ const setActiveStyle = function (styleName, value, object) {
       // console.log(svg)
       draw.loadSVGWithoutGrouping(svg)
     }
-    return ''
+    return svg
   }
-  draw.getObjStyle = () => {
+ /*  draw.getObjStyle = () => {
     let obj = draw.getSelected()
     let group = canvas.getActiveGroup()
 
@@ -429,7 +446,7 @@ const setActiveStyle = function (styleName, value, object) {
     } else {
       return ''
     }
-  }
+  } */
 }
 
 // 画图相关
@@ -476,7 +493,7 @@ const setActiveStyle = function (styleName, value, object) {
     }))*/
   }
 
-  draw.addLine = function () {
+  draw.addLine = () => {
     var coord = getRandomLeftTop()
     canvas.add(new qdraw.Line([50, 100, 200, 200], {
       left: coord.left,
@@ -485,7 +502,7 @@ const setActiveStyle = function (styleName, value, object) {
     }))
   }
 
-  draw.addPolygon = function () {
+  draw.addPolygon = () => {
     var coord = getRandomLeftTop()
 
     this.canvas.add(new qdraw.Polygon([{
@@ -537,8 +554,9 @@ const setActiveStyle = function (styleName, value, object) {
     // options.width = options.width || 300
     options.hasRotatingPoint=true
     options.centerTransform = true
-    // options.fontFamily ='微软雅黑'
+    options.fontFamily ='微软雅黑'
     options.fontWeight = options.fontWeight || ''
+    options.width = options.text.length*16>600?600:options.text.length*16
     // options.angle = 0
     let text = new qdraw.Textbox(options.text, options)
     // var text = new qdraw.Textbox(text.slice(0, getRandomInt(0, text.length)), {
@@ -586,6 +604,8 @@ const setActiveStyle = function (styleName, value, object) {
     qdraw.loadSVGFromURL(svgUrl, function (objects, options) {
       // console.log(objects, options)
       var loadedObject = qdraw.util.groupSVGElements(objects, options)
+      // console.log(loadedObject)
+      
       loadedObject.set({
           left: 100, // coord.left,
           top: 100, // coord.top,
@@ -628,12 +648,12 @@ const setActiveStyle = function (styleName, value, object) {
 
 // 画布执行型操作
 {
-  draw.confirmClear = function () {
+  draw.confirmClear = () => {
     if (confirm('清空不能复原，您确定吗?')) {
       canvas.clear()
     }
   }
-  draw.toImage = function () {
+  draw.toImage = () => {
     if (!qdraw.Canvas.supports('toDataURL')) {
       alert('您的浏览器不支持此项操作！')
     } else {
@@ -642,26 +662,26 @@ const setActiveStyle = function (styleName, value, object) {
     }
   }
 
-  draw.toSVG = function () {
+  draw.toSVG = () => {
     window.open(
       'data:image/svg+xmlutf8,' +
       encodeURIComponent(canvas.toSVG()))
   }
 
-  draw.toJSON = function () {
+  draw.toJSON = () => {
     draw.setConsoleJSON(JSON.stringify(canvas))
   }
 
-  draw.getSelected = function () {
+  draw.getSelected = () => {
     if (!canvas) return ''
     return canvas.getActiveObject()
   }
-  draw.getSelectedGroup = function () {
+  draw.getSelectedGroup = () => {
     if (!canvas) return ''
     return canvas.getActiveGroup()
   }
 
-  draw.removeSelected = function () {
+  draw.removeSelected = () => {
     var activeObject = canvas.getActiveObject()
     var activeGroup = canvas.getActiveGroup()
     // console.log(activeObject,activeGroup)
@@ -687,124 +707,124 @@ const setActiveStyle = function (styleName, value, object) {
     setActiveProp('lockRotation', value)
     // return lock
   }
-  draw.getHorizontalLock = function () {
+  draw.getHorizontalLock = () => {
     return getActiveProp('lockMovementX')
   }
-  draw.setHorizontalLock = function (value) {
+  draw.setHorizontalLock = (value) => {
     setActiveProp('lockMovementX', value)
   }
 
-  draw.getVerticalLock = function () {
+  draw.getVerticalLock = () => {
     return getActiveProp('lockMovementY')
   }
-  draw.setVerticalLock = function (value) {
+  draw.setVerticalLock = (value) => {
     setActiveProp('lockMovementY', value)
   }
 
-  draw.getScaleLockX = function () {
+  draw.getScaleLockX = () => {
     return getActiveProp('lockScalingX')
   }
-  draw.setScaleLockX = function (value) {
+  draw.setScaleLockX = (value) => {
     setActiveProp('lockScalingX', value)
   }
 
-  draw.getScaleLockY = function () {
+  draw.getScaleLockY = () => {
     return getActiveProp('lockScalingY')
   }
-  draw.setScaleLockY = function (value) {
+  draw.setScaleLockY = (value) => {
     setActiveProp('lockScalingY', value)
   }
 
-  draw.getRotationLock = function () {
+  draw.getRotationLock = () => {
     return getActiveProp('lockRotation')
   }
-  draw.setRotationLock = function (value) {
+  draw.setRotationLock = (value) => {
     setActiveProp('lockRotation', value)
   }
 }
 
 // 其他相关属性 ，对齐
 {
-  draw.getOriginX = function () {
+  draw.getOriginX = () => {
     return getActiveProp('originX')
   }
 
-  draw.setOriginX = function (value) {
+  draw.setOriginX = (value) => {
     setActiveProp('originX', value)
   }
 
-  draw.getOriginY = function () {
+  draw.getOriginY = () => {
     return getActiveProp('originY')
   }
-  draw.setOriginY = function (value) {
+  draw.setOriginY = (value) => {
     setActiveProp('originY', value)
   }
 
-  draw.getObjectCaching = function () {
+  draw.getObjectCaching = () => {
     return getActiveProp('objectCaching')
   }
 
-  draw.setObjectCaching = function (value) {
+  draw.setObjectCaching = (value) => {
     return setActiveProp('objectCaching', value)
   }
 
-  draw.getNoScaleCache = function () {
+  draw.getNoScaleCache = () => {
     return getActiveProp('noScaleCache')
   }
 
-  draw.setNoScaleCache = function (value) {
+  draw.setNoScaleCache = (value) => {
     return setActiveProp('noScaleCache', value)
   }
 
-  draw.getTransparentCorners = function () {
+  draw.getTransparentCorners = () => {
     return getActiveProp('transparentCorners')
   }
 
-  draw.setTransparentCorners = function (value) {
+  draw.setTransparentCorners = (value) => {
     return setActiveProp('transparentCorners', value)
   }
 
-  draw.getHasBorders = function () {
+  draw.getHasBorders = () => {
     return getActiveProp('hasBorders')
   }
 
-  draw.setHasBorders = function (value) {
+  draw.setHasBorders = (value) => {
     return setActiveProp('hasBorders', value)
   }
 
-  draw.getHasControls = function () {
+  draw.getHasControls = () => {
     return getActiveProp('hasControls')
   }
 
-  draw.setHasControls = function (value) {
+  draw.setHasControls = (value) => {
     return setActiveProp('hasControls', value)
   }
 }
 
 // 层级切换
 {
-  draw.sendBackwards = function () {
+  draw.sendBackwards = () => {
     var activeObject = canvas.getActiveObject()
     if (activeObject) {
       canvas.sendBackwards(activeObject)
     }
   }
 
-  draw.sendToBack = function () {
+  draw.sendToBack = () => {
     var activeObject = canvas.getActiveObject()
     if (activeObject) {
       canvas.sendToBack(activeObject)
     }
   }
 
-  draw.bringForward = function () {
+  draw.bringForward = () => {
     var activeObject = canvas.getActiveObject()
     if (activeObject) {
       canvas.bringForward(activeObject)
     }
   }
 
-  draw.bringToFront = function () {
+  draw.bringToFront = () => {
     var activeObject = canvas.getActiveObject()
     if (activeObject) {
       canvas.bringToFront(activeObject)
@@ -813,7 +833,7 @@ const setActiveStyle = function (styleName, value, object) {
 }
 // 裁剪，阴影
 {
-  draw.clip = function () {
+  draw.clip = () => {
     var obj = canvas.getActiveObject()
     if (!obj) return
 
@@ -828,7 +848,7 @@ const setActiveStyle = function (styleName, value, object) {
     canvas.renderAll()
   }
 
-  draw.shadowify = function () {
+  draw.shadowify = () => {
     var obj = canvas.getActiveObject()
     if (!obj) return
 
@@ -845,7 +865,7 @@ const setActiveStyle = function (styleName, value, object) {
     canvas.renderAll()
   }
 
-  draw.gradientify = function () {
+  draw.gradientify = () => {
     var obj = canvas.getActiveObject()
     if (!obj) return
 
@@ -870,29 +890,158 @@ let consoleValue = ''
 draw.consoleJSONValue = consoleJSONValue
 draw.consoleSVGValue = consoleSVGValue
 draw.consoleValue = consoleValue
-
 {
-  draw.getConsoleJSON = function () {
+  draw.ondrop = (e) => {
+    e.preventDefault()
+    var fs = e.dataTransfer.files
+    // console.log(fs,e.dataTransfer)
+    for (var i = 0; i < fs.length; i++) {
+      if (fs[i].type.indexOf('image') != -1) {
+        var reader = new FileReader()
+        reader.onload = (y) => {
+          // console.log(y)
+          let o = { src: y.target.result, zoomX: 1, zoomY: 1 }
+          draw.addImage(o)
+        }
+        reader.readAsDataURL(fs[i])
+      }
+    }
+  }
+  draw.keydown = (e) => {
+    let key = e.keyCode
+    if (key == 46 || key == 8) {
+      draw.removeSelected()
+      return
+    }
+    let obj = draw.getSelected()
+    // if (obj) {
+    if (e.ctrlKey)  //shift +ctrl
+    {
+      if (e.shiftKey) {
+        if (key == 38) { draw.bringToFront() }
+        if (key == 40) { draw.sendToBack() }
+        return
+      }
+      if (key == 38) { draw.bringForward() }
+      if (key == 40) { draw.sendBackwards() }
+      if (key == 76) { draw.toggleLock() }
+      return
+    }
+    if (key == 37) { let x = obj.left - 10; draw.setLeft(x) }
+    if (key == 38) { let y = obj.top - 10; draw.setTop(y) }
+    if (key == 39) { let x = obj.left + 10; draw.setLeft(x) }
+    if (key == 40) { let y = obj.top + 10; draw.setTop(y) }
+  }
+  draw.copy = (e, cut) => {
+    e.preventDefault()
+    let board = e.clipboardData || window.clipboardData
+    let gs = canvas.getActiveGroup()
+    let o = canvas.getActiveObject()
+    let obj = gs ? [gs] : [o]
+    let str = JSON.stringify(obj)
+    board.setData('text', str)
+    cut && draw.removeSelected()
+    return str
+  }
+  draw.paste = (e) => {
+    e.preventDefault()
+    let board = e.clipboardData
+    // 取粘贴板图片
+    var i = 0, items, item, types
+    items = board.items
+    if (!items) {
+      return
+    }
+    item = items[0]
+    types = board.types || []
+    for (; i < types.length; i++) {
+      if (types[i] === 'Files') {
+        item = items[i]
+        break
+      }
+    }
+    // 判断是否为图片数据
+    if (item && item.kind === 'file' && item.type.match(/^image\//i)) {
+      // 读取该图片            
+      var file = item.getAsFile()
+      var reader = new FileReader()
+      reader.onload = (e) => {
+        let o = { src: e.target.result, zoomX: 1, zoomY: 1 }
+        draw.addImage(o)
+      }
+      reader.readAsDataURL(file)
+      return
+    }
+    let data = board.getData('text')
+    try {
+      let obj = JSON.parse(data)
+      canvas.loadObjFormJson(obj)
+    } catch (e) { }
+  }
+  draw.group = () => {
+    let x = canvas.getActiveGroup()
+    let y = x.getObjects()
+    let groups = []
+    y.map((x) => {
+      groups.push(clone(x))
+    })
+    let opt = { left: x.left, top: x.top, angle: x.angle, scaleX: x.scaleX, scaleY: x.scaleY }
+    let group = new qdraw.Group(groups, opt)
+    group.isGroup = true
+    canvas.add(group)
+    draw.removeSelected()
+    draw.render()
+  }
+
+  draw.ungroup = () => {
+    let o = canvas.getActiveObject()
+    if (!o.getObjects) return
+    console.log(o)
+    let data = JSON.parse(JSON.stringify(o.getObjects()))
+    data.map((x) => {
+      x.skewX = o.skewX
+      x.skewY = o.skewY
+      x.flipX = o.flipX
+      x.flipY = o.flipY
+      o.angle > 0 && (x.angle = o.angle)
+      o.zoomX > 1 && (x.zoomX = o.zoomX)
+      o.zoomY > 1 && (x.zoomY = o.zoomY)
+      o.scaleX > 1 && (x.scaleX = o.scaleX)
+      o.scaleY > 1 && (x.scaleY = o.scaleY)
+      x.left = x.left * (x.zoomX || 1) + o.left - 10
+      x.top = x.top * (x.zoomY || 1) + o.top - 10
+      x.left < 0 && (x.left = 100)
+      x.top < 0 && (x.top = 100)
+    })
+    console.log(data)
+
+    canvas.loadObjFormJson(data)
+    draw.removeSelected()
+    return
+  }
+  draw.getConsoleJSON = () => {
     return consoleJSONValue
   }
-  draw.setConsoleJSON = function (value) {
+  draw.setConsoleJSON = (value) => {
     consoleJSONValue = value
   }
-  draw.getConsoleSVG = function () {
+  draw.getConsoleSVG = () => {
     return consoleSVGValue
   }
-  draw.setConsoleSVG = function (value) {
+  draw.setConsoleSVG = (value) => {
     consoleSVGValue = value
   }
-  draw.getConsole = function () {
+  draw.getConsole = () => {
     return consoleValue
   }
-  draw.setConsole = function (value) {
+  draw.setConsole = (value) => {
     consoleValue = value
   }
 
   draw.loadSVGWithoutGrouping = function (svg) {
     qdraw.loadSVGFromString(svg, function (objects) {
+      console.log(objects)
+     
       canvas.add.apply(canvas, objects)
       canvas.renderAll()
     })
@@ -905,12 +1054,13 @@ draw.consoleValue = consoleValue
   var _loadSVG = function (svg) {
     qdraw.loadSVGFromString(svg, function (objects, options) {
       var obj = qdraw.util.groupSVGElements(objects, options)
+      
       canvas.add(obj).centerObject(obj).renderAll()
       obj.setCoords()
     })
   }
 
-  draw.saveJSON = function () {
+  draw.saveJSON = () => {
     _saveJSON(JSON.stringify(canvas))
   }
 
@@ -918,7 +1068,7 @@ draw.consoleValue = consoleValue
     draw.setConsoleJSON(json)
   }
 
-  draw.loadJSON = function () {
+  draw.loadJSON = () => {
     _loadJSON(consoleJSONValue)
   }
 
@@ -931,6 +1081,16 @@ draw.consoleValue = consoleValue
 //数据输出部分
 
 {
+  let _ss =`<svg version="1.1"   xmlns="http://www.w3.org/2000/svg"  >
+ <g>
+	<polygon style="fill-rule:evenodd;clip-rule:evenodd;" points="11.5,16.5 11.5,6.75 15,9.5 15,8.5 11,5.5 7,8.5 7,9.5 10.502,6.75 
+		10.502,16.5 	"/>
+	<path style="fill-rule:evenodd;clip-rule:evenodd;" d="M22,11c0-6.075-4.925-11-11-11C4.925,0,0,4.925,0,11c0,6.075,4.925,11,11,11
+		C17.075,22,22,17.075,22,11z M1,11C1,5.477,5.477,1,11,1c5.523,0,10,4.477,10,10s-4.477,10-10,10C5.477,21,1,16.523,1,11z"/>
+</g>
+
+</svg>`
+  // draw.loadSVGWithoutGrouping(_ss)
 
 }
 
@@ -939,25 +1099,25 @@ draw.consoleValue = consoleValue
 draw.isDrawingMode = () => {
   return canvas.isDrawingMode
 }
-draw.getPreserveObjectStacking = function () {
+draw.getPreserveObjectStacking = () => {
   return canvas.preserveObjectStacking
 }
 
-draw.setPreserveObjectStacking = function (value) {
+draw.setPreserveObjectStacking = (value) => {
   return canvas.preserveObjectStacking = value
 }
 
-draw.getFreeDrawingMode = function () {
+draw.getFreeDrawingMode = () => {
   return canvas.isDrawingMode
 }
-draw.setFreeDrawingMode = function (value) {
+draw.setFreeDrawingMode = (value) => {
   canvas.isDrawingMode = !!value
   // draw.$$phase || draw.$digest()
 }
 
 draw.freeDrawingMode = 'Pencil'
 
-draw.getDrawingMode = function () {
+draw.getDrawingMode = () => {
   return draw.freeDrawingMode
 }
 draw.setDrawingMode = function (type) {
@@ -980,36 +1140,36 @@ draw.setDrawingMode = function (type) {
   // draw.$$phase || draw.$digest()
 }
 
-draw.getDrawingLineWidth = function () {
+draw.getDrawingLineWidth = () => {
   if (canvas.freeDrawingBrush) {
     return canvas.freeDrawingBrush.width
   }
 }
-draw.setDrawingLineWidth = function (value) {
+draw.setDrawingLineWidth = (value) => {
   if (canvas.freeDrawingBrush) {
     canvas.freeDrawingBrush.width = parseInt(value, 10) || 1
   }
 }
 
-draw.getDrawingLineColor = function () {
+draw.getDrawingLineColor = () => {
   if (canvas.freeDrawingBrush) {
     return canvas.freeDrawingBrush.color
   }
 }
-draw.setDrawingLineColor = function (value) {
+draw.setDrawingLineColor = (value) => {
   if (canvas.freeDrawingBrush) {
     canvas.freeDrawingBrush.color = value
   }
 }
 
-draw.getDrawingLineShadowWidth = function () {
+draw.getDrawingLineShadowWidth = () => {
   if (canvas.freeDrawingBrush && canvas.freeDrawingBrush.shadow) {
     return canvas.freeDrawingBrush.shadow.blur || 1
   } else {
     return 0
   }
 }
-draw.setDrawingLineShadowWidth = function (value) {
+draw.setDrawingLineShadowWidth = (value) => {
   if (canvas.freeDrawingBrush) {
     var blur = parseInt(value, 10) || 1
     if (blur > 0) {
@@ -1048,7 +1208,7 @@ draw.setDrawingLineShadowWidth = function (value) {
 
   function initDiamondPatternBrush() {
     draw.diamondPatternBrush = new qdraw.PatternBrush(canvas)
-    draw.diamondPatternBrush.getPatternSrc = function () {
+    draw.diamondPatternBrush.getPatternSrc = () => {
       var squareWidth = 10
       var squareDistance = 5
       var patternCanvas = qdraw.document.createElement('canvas')
@@ -1076,7 +1236,7 @@ draw.setDrawingLineShadowWidth = function (value) {
 
   function initSquarePatternBrush() {
     draw.squarePatternBrush = new qdraw.PatternBrush(canvas)
-    draw.squarePatternBrush.getPatternSrc = function () {
+    draw.squarePatternBrush.getPatternSrc = () => {
       var squareWidth = 10
       var squareDistance = 2
 
@@ -1093,7 +1253,7 @@ draw.setDrawingLineShadowWidth = function (value) {
 
   function initVLinePatternBrush() {
     draw.vLinePatternBrush = new qdraw.PatternBrush(canvas)
-    draw.vLinePatternBrush.getPatternSrc = function () {
+    draw.vLinePatternBrush.getPatternSrc = () => {
       var patternCanvas = qdraw.document.createElement('canvas')
       patternCanvas.width = patternCanvas.height = 10
       var ctx = patternCanvas.getContext('2d')
@@ -1112,7 +1272,7 @@ draw.setDrawingLineShadowWidth = function (value) {
 
   function initHLinePatternBrush() {
     draw.hLinePatternBrush = new qdraw.PatternBrush(canvas)
-    draw.hLinePatternBrush.getPatternSrc = function () {
+    draw.hLinePatternBrush.getPatternSrc = () => {
       var patternCanvas = qdraw.document.createElement('canvas')
       patternCanvas.width = patternCanvas.height = 10
       var ctx = patternCanvas.getContext('2d')
@@ -1151,7 +1311,7 @@ draw.setDrawingLineShadowWidth = function (value) {
   initCustomization()
 }
 
-draw.getDPI = function () {
+draw.getDPI = () => {
   var arrDPI = []
   if (window.screen.deviceXDPI !== undefined) {
     arrDPI[0] = window.screen.deviceXDPI

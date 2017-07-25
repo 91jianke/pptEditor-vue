@@ -170,7 +170,7 @@ component.checkbox = (opt) => {
 component.sqa = (opt) => {
   opt = opt || {}
   let a = opt.A || '你为什么不输入标题？'
-  let q = opt.Q || '因为我忘记输入答案了，但是我可能是故意因为我忘记输入答案了，\n\n\n\n但是我可能是故意 '
+  let q = opt.Q || '因为我忘记输入答案了，但是我可能是故意的，因为我忘记输入答案了，\n\n\n\n但是我可能是故意 '
   let root = document.createElementNS(SVGNS, 'svg')
   let _a = root.el('text')
   _a.attr({
@@ -208,7 +208,7 @@ component.line = (opt) => {
     title.attr({
       y: 25
     })
-    title.innerHTML = opt.title || '请讲下面的对应的项用直线链接起来'
+    title.innerHTML = opt.title || '请将下面的对应的项用直线链接起来'
     // options
     let l = keys.filter(x => x.type == 1)
     let r = keys.filter(x => x.type == 2)
