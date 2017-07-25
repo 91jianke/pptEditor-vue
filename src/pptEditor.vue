@@ -1,24 +1,24 @@
 <template>
-    <div class="pages" ref="pages">
+    <div class="pages" ref="pages" tabindex="-1">
         <!-- 工具栏 -->
         <div class="contorl" v-show="!isPreview">
-            <span :class="(item=='pen'&&isDraw)?'active jk-'+item:'jk-'+item" v-for="item in controls" @click="setControl(item)"></span>
+            <span :class="(item=='pen'&&isDraw)?'active jk-'+item:'jk-'+item" v-for="(item,index) in controls" @click="setControl(item)" :key="index"></span>
         </div>
         <!--画板-->
-        <div draggable="true" :class="item.active?'draw-box active':'draw-box'" v-for="(item,index) in pages" ref="drawbox" :width="width" :height="height" :isPreview="isPreview" @mouseup="showMenu(item.active,$event)">
-            <div class="view" v-show="!item.active&&!isPreview" :style="'width:'+width+'px;height:'+height+'px;'" @click="activeCanvas(index,$event)">
+        <div draggable="true" tabindex="0" :class="item.active?'draw-box active':'draw-box'" v-for="(item,index) in pages" :width="width" :height="height" @dblclick="stop()" :isPreview="isPreview" @click="activeCanvas(index)" @contextmenu="contextmenu($event)" @mouseup="showTools(item.active,$event)" :key="index">
+            <div class="view" v-show="!item.active&&!isPreview" :style="'width:'+width+'px;height:'+height+'px;'">
                 <span>单击编辑</span>
             </div>
-            <canvas :id="item.id" :width="width" :height="height"></canvas>
+            <canvas :id="item.id" :width="width" :height="height" tabindex="0"></canvas>
         </div>
         <!--属性-->
         <div class="prop-box" v-show="!isPreview" :style="'top:'+((height*1+32)*activeIndex+11)+'px;'">
-            <span :class="`jk-${item}`" v-for="item in props" @click.stop="setProp(item)" @mousemove="propType=item">
+            <span :class="`jk-${item}`" v-for="(item,index) in props" @click.stop="setProp(item)" @mousemove="propType=item" :key="index">
                 <div class="colorbox" v-if="'fill stroke back'.indexOf(item)>-1">
                     <colorPiker @change="colorChange" />
                 </div>
                 <div class="fonts" v-if="item == 'text'">
-                    <span v-for="f in fonts" @click.stop="setProp(item,f)">{{f}}</span>
+                    <span v-for="(f,index) in fonts" @click.stop="setProp(item,f)" :key="index">{{f}}</span>
                 </div>
                 <div class="range" v-if="'font opacity border lineheight charspacing'.indexOf(item)>-1">
                     <input type="range" v-if="item=='font'" min="12" max="100" step="1" @input="setProp(item,$event)">
@@ -31,7 +31,7 @@
         </div>
         <!--菜单-->
         <menu class="contextMenu" ref="contextMenu" v-show="contextMenuShow">
-            <li v-for="menu in contextMenu" @click="excue(menu.shortcut)">
+            <li v-for="(menu,index) in contextMenu" @click="excue(menu.shortcut)" :key="index">
                 {{menu.text}}
                 <span class="shortcut">{{menu.value}}</span>
             </li>
@@ -122,16 +122,29 @@ export default {
         container.appendChild(addStyle);
     },
     created() {
-        document.oncontextmenu = (e) => { e.preventDefault(); }
+        // box.oncontextmenu = (e) => { e.preventDefault(); }
         document.onpaste = (e) => { draw.paste(e) }
         document.oncopy = (e) => { this.copyData = draw.copy(e) }
-        document.oncut = (e) => { e.preventDefault();this.copyData = draw.copy(e, true) }
+        document.oncut = (e) => { e.preventDefault(); this.copyData = draw.copy(e, true) }
         document.onclick = () => { this.contextMenuShow = false }
         document.onkeydown = (e) => { draw.keydown(e) }
         document.ondragover = (e) => { e.preventDefault() }
         document.ondrop = (e) => { draw.ondrop(e) }
     },
     methods: {
+        stop(){
+            draw.togglePlay()
+        },
+        contextmenu(e) {
+            e.preventDefault();
+            let menu = this.$refs.contextMenu
+            let y = document.body.clientHeight - e.clientY > 378 ? e.clientY : e.clientY - 378
+            let x = document.body.clientWidth - e.clientX > 212 ? e.clientX : e.clientX - 202
+            menu.style.left = x + 'px'
+            menu.style.top = y + 'px'
+            this.contextMenuShow = true
+            return
+        },
         colorChange(v) {
             switch (this.propType) {
                 case 'fill': draw.setFill(v); break;
@@ -209,7 +222,7 @@ export default {
                 })
                 this.$emit('getDataJson', this.jsonData)
             }
-        }, 
+        },
         toggleFullScreent(ele) {
             !this.isFullScreen ? draw.fullScreen(ele) : draw.exitFullscreen();
             this.isFullScreen = !this.isFullScreen
@@ -228,16 +241,13 @@ export default {
                 case 'table': this.showTableBox = true; break;
                 case 'media': this.showVideoBox = true; break;
                 case 'book': this.showShiTiBox = true; break;
-                case 'view': this.toggleFullScreent(this.$refs.drawbox[1]); break;
+                // case 'view': this.toggleFullScreent(this.$refs.drawbox[1]); break;
                 case 'fullscreen': this.toggleFullScreent(this.$refs.pages); break;
             }
             item != 'pen' && (this.isDraw = false, draw.setFreeDrawingMode(false))
             this.cancelSelect(false)
         },
         activeCanvas(index, event) {
-            // let c = this.pages.filter(x => x.active == true)[0]
-            // let _index = this.pages.indexOf(c)
-            // console.log(index)
             this.pages.map(x => x.active = false)
             this.pages[index].active = true
             this.canvas = this.draws[index]
@@ -407,7 +417,7 @@ export default {
             switch (type) {
                 case 'cut': document.execCommand('cut'); break;
                 case 'copy': document.execCommand('copy'); break;
-                case 'paste': let obj = JSON.parse(this.copyData);this.canvas.loadObjFormJson(obj);break;
+                case 'paste': let obj = JSON.parse(this.copyData); this.canvas.loadObjFormJson(obj); break;
                 case 'delete': draw.removeSelected(); break;
                 case 'lock': draw.toggleLock(); break;
                 case 'group': draw.group(); break;
@@ -422,16 +432,11 @@ export default {
         },
         setColor(name, value) {
             switch (name) {
-                case 'pagebg':
-                    draw.setCanvasBgColor(value); break;
-                case 'fill':
-                    draw.setFill(value); break;
-                case 'stroke':
-                    draw.setStroke(value); break;
-                case 'objbg':
-                    draw.setBgColor(value); break;
-                case 'textbg':
-                    draw.setTextBgColor(value); break;
+                case 'pagebg': draw.setCanvasBgColor(value); break;
+                case 'fill': draw.setFill(value); break;
+                case 'stroke': draw.setStroke(value); break;
+                case 'objbg': draw.setBgColor(value); break;
+                case 'textbg': draw.setTextBgColor(value); break;
             }
             this.updateJosn()
         },
@@ -448,74 +453,33 @@ export default {
         },
         addComponent(shap, item) {
             switch (shap) {
-                case 'svg':
-                    // var getsvg = (element) => {
-                    //   var svg = ''
-                    //   if (element.nodeName == 'LI') {
-                    //     svg = element.innerHTML
-                    //   } else {
-                    //     svg = getsvg(element.parentElement)
-                    //   }
-                    //   return svg
-                    // }
-                    // let svg = getsvg(item.srcElement)
-                    if (item.src)
-                        draw.addShapeByUrl(item.src)
-                    else if (item.data)
-                        // console.log(svg)
-                        draw.loadSVG(item.data)
-                    break;
-                case 'Line': draw.addLine()
-                    break
-                case 'Circle': draw.addCircle()
-                    break
-                case 'Triangle': draw.addTriangle()
-                    break
-                case 'Polygon': draw.addPolygon()
-                    break
-                case 'Rect': draw.addRect()
-                    break
-                case 'Textbox': draw.addTextbox({ text: '双击修改文字', fontSize: 14, left: 20, top: 20 })
-                    break
-                case 'video':
-                    // draw.createVideo(item.src)
-                    break
+                case 'svg': if (item.src) draw.addShapeByUrl(item.src); else if (item.data) draw.loadSVG(item.data); break;
+                case 'Line': draw.addLine(); break
+                case 'Circle': draw.addCircle(); break
+                case 'Triangle': draw.addTriangle(); break
+                case 'Polygon': draw.addPolygon(); break
+                case 'Rect': draw.addRect(); break
+                case 'Textbox': draw.addTextbox({ text: '双击修改文字', fontSize: 14, left: 20, top: 20 }); break
+                case 'video': draw.createVideo(item.src); break
                 case 'image': draw.addImage({ src: item.src, }); break;
             }
             this.showImgBox = false
             this.showSvgBox = false
-            setTimeout(() => {
-                this.updateJosn()
-            }, 1000);
+            this.showVideoBox = false
+            setTimeout(() => { this.updateJosn() }, 1000);
         },
         getObjStyle() {
             draw.getObjStyle()
         },
-        showMenu(active, event) {
+        showTools(active, event) {
             if (this.isPreview || !active) return
             this.updateJosn()
-
             if (event.button == 0) {
                 setTimeout(() => {
                     let obj = draw.getSelected()
                     let group = draw.getSelectedGroup()
                     this.props = obj ? (obj.text ? this.propText : this.static) : (group ? this.group : [])
                 }, 100);
-                return
-            }
-            if (event.button == 2) {
-                event.preventDefault();
-                let menu = this.$refs.contextMenu
-                // (212,293)
-                let y = document.body.clientHeight - event.clientY > 378 ? event.clientY : event.clientY - 378
-                let x = document.body.clientWidth - event.clientX > 212 ? event.clientX : event.clientX - 202
-                menu.style.left = x + 'px'
-                menu.style.top = y + 'px'
-                this.contextMenuShow = true
-                //    event.cancelbutton = true
-                //    event.returnvalue = false
-                //    event.stopPropagation();
-                return
             }
         },
         save(type) {
@@ -561,8 +525,10 @@ export default {
         canvas.isPreview = this.isPreview
         this.canvas = canvas
         draw.init(canvas)
+
         history.init(canvas)
         this.draws.push(canvas)
+
     },
 
 }

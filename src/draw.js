@@ -331,28 +331,22 @@ const setActiveStyle = function (styleName, value, object) {
     canvas.backgroundColor = value
     canvas.renderAll()
   }
+  draw.togglePlay = ()=> {
+    let o = canvas.getActiveObject()
+    if (!o || !o.getElement) return
+    let v = o.getElement()
+    v.paused ? v.play() : v.pause()
+  }
   draw.createVideo = (url) => {
     let v = document.createElement('video')
-    // document.body.appendChild(v)
-    v.src = url
-    var video = new qdraw.Image(v, {
-      // left: 50,
-      // top: 50,
-      originX: 'center',
-      originY: 'center'
-    }); 
-    canvas.add(video);
-    video.getElement().play();
+    v.src = url;v.width = 640;v.height = 360;
+    var video = new qdraw.Image(v, { left: 150, top: 150, originX: 'center', originY: 'center' })
+    canvas.add(video)
+    video.getElement().play()
     qdraw.util.requestAnimFrame(function render() {
-      canvas.renderAll();
-      qdraw.util.requestAnimFrame(render);
-    });
-    /* let svg = `<svg xmlns="http://www.w3.org/2000/svg" ><svg>
-                    <foreignobject x="0" y="0" width="200" height="120">
-                      <video src="${url}" class="video" controls="controls"></video></svg>
-                    </foreignobject>
-                  </svg>`
-    return svg */
+      canvas.renderAll()
+      qdraw.util.requestAnimFrame(render)
+    })
   }
   draw.createSVG = (o) => {
     // console.log(o)
@@ -505,23 +499,11 @@ const setActiveStyle = function (styleName, value, object) {
   draw.addPolygon = () => {
     var coord = getRandomLeftTop()
 
-    this.canvas.add(new qdraw.Polygon([{
-        x: 185,
-        y: 0
-      },
-      {
-        x: 250,
-        y: 100
-      },
-      {
-        x: 385,
-        y: 170
-      },
-      {
-        x: 0,
-        y: 245
-      }
-    ], {
+    this.canvas.add(new qdraw.Polygon([
+      { x: 185, y: 0 },
+      { x: 250, y: 100 },
+      { x: 385, y: 170 },
+      { x: 0, y: 245 } ], {
       left: coord.left,
       top: coord.top,
       fill: '#' + getRandomColor()
@@ -689,9 +671,15 @@ const setActiveStyle = function (styleName, value, object) {
       var objectsInGroup = activeGroup.getObjects()
       canvas.discardActiveGroup()
       objectsInGroup.forEach(function (object) {
+        if (activeObject.getElement) {
+          activeObject.getElement().pause()
+        }
         canvas.remove(object)
       })
     } else if (activeObject) {
+      if (activeObject.getElement) {
+        activeObject.getElement().pause()
+      }
       canvas.remove(activeObject)
     }
   }
@@ -937,6 +925,7 @@ draw.consoleValue = consoleValue
     let board = e.clipboardData || window.clipboardData
     let gs = canvas.getActiveGroup()
     let o = canvas.getActiveObject()
+    if (!gs && !o) return
     let obj = gs ? [gs] : [o]
     let str = JSON.stringify(obj)
     board.setData('text', str)
@@ -980,7 +969,7 @@ draw.consoleValue = consoleValue
   }
   draw.group = () => {
     let x = canvas.getActiveGroup()
-    if (!x.getObjects) return
+    if(!x.getObjects) return
     let y = x.getObjects()
     let groups = []
     y.map((x) => {
@@ -1274,7 +1263,6 @@ draw.setDrawingLineShadowWidth = (value) => {
       var patternCanvas = qdraw.document.createElement('canvas')
       patternCanvas.width = patternCanvas.height = 10
       var ctx = patternCanvas.getContext('2d')
-
       ctx.strokeStyle = this.color
       ctx.lineWidth = 5
       ctx.beginPath()
@@ -1282,7 +1270,6 @@ draw.setDrawingLineShadowWidth = (value) => {
       ctx.lineTo(5, 10)
       ctx.closePath()
       ctx.stroke()
-
       return patternCanvas
     }
   }
@@ -1324,5 +1311,5 @@ draw.getDPI = () => {
   }
   return arrDPI
 }
-
+// let _draw = () => draw
 export default draw
