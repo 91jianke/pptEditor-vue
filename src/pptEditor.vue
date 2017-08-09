@@ -1,18 +1,18 @@
 <template>
     <div class="pages" ref="pages" tabindex="-1">
         <!-- 工具栏 -->
-        <div class="contorl" v-show="!isPreview">
+        <div class="contorl" v-show="!isPreview" :style="`top:${(height+32)*activeIndex+88}px;`">
             <span :class="(item=='pen'&&isDraw)?'active jk-'+item:'jk-'+item" v-for="(item,index) in controls" @click="setControl(item)" :key="index"></span>
         </div>
         <!--画板-->
-        <div draggable="true" tabindex="0" :class="item.active?'draw-box active':'draw-box'" v-for="(item,index) in pages" :width="width" :height="height" @dblclick="stop()" :isPreview="isPreview" @click="activeCanvas(index)" @contextmenu="contextmenu($event)" @mouseup="showTools(item.active,$event)" :key="index">
-            <div class="view" v-show="!item.active&&!isPreview" :style="'width:'+width+'px;height:'+height+'px;'">
+        <div draggable="true" tabindex="0" :class="item.active?'draw-box active':'draw-box'" v-for="(item,index) in pages" @dblclick="stop()" :isPreview="isPreview" @click="activeCanvas(index)" @contextmenu="contextmenu($event)" @mouseup="showTools(item.active,$event)" :key="index">
+            <div class="view" v-show="!item.active&&!isPreview" :style="`width:${width}px;height:${height}px;`">
                 <span>单击编辑</span>
             </div>
             <canvas :id="item.id" :width="width" :height="height" tabindex="0"></canvas>
         </div>
         <!--属性-->
-        <div class="prop-box" v-show="!isPreview" :style="'top:'+((height*1+32)*activeIndex+11)+'px;'">
+        <div class="prop-box" v-show="!isPreview" :style="`top:${(height+32)*activeIndex+11}px;`">
             <span :class="`jk-${item}`" v-for="(item,index) in props" @click.stop="setProp(item)" @mousemove="propType=item" :key="index">
                 <div class="colorbox" v-if="'fill stroke back'.indexOf(item)>-1">
                     <colorPiker @change="colorChange" />
@@ -21,18 +21,28 @@
                     <span v-for="(f,index) in fonts" @click.stop="setProp(item,f)" :key="index">{{f}}</span>
                 </div>
                 <div class="range" v-if="'font opacity border lineheight charspacing'.indexOf(item)>-1">
-                    <input type="range" v-if="item=='font'" min="12" max="100" step="1" @input="setProp(item,$event)">
-                    <input type="range" v-if="item=='opacity'" min="0" max="1" step="0.1" @input="setProp(item,$event)">
-                    <input type="range" v-if="item=='border'" value="1" min="1" max="30" step="1" @input="setProp(item,$event)">
-                    <input type="range" v-if="item=='lineheight'" min="0" max="10" step="0.1" @input="setProp(item,$event)">
-                    <input type="range" v-if="item=='charspacing'" min="-200" max="800" step="10" @input="setProp(item,$event)">
+                    <span v-if="item=='font'">
+                        <input type="range" min="12" max="100" step="1" @input="setProp(item,$event)" v-model="fontSize">{{fontSize}}
+                    </span>
+                    <span v-if="item=='opacity'">
+                        <input type="range" min="0" max="1" step="0.1" @input="setProp(item,$event)" v-model="opacity">{{opacity}}
+                    </span>
+                    <span v-if="item=='border'">
+                        <input type="range" v-if="item=='border'" value="1" min="1" max="30" step="1" @input="setProp(item,$event)" v-model="border">{{border}}
+                    </span>
+                    <span v-if="item=='lineheight'">
+                        <input type="range" min="0" max="10" step="0.1" @input="setProp(item,$event)" v-model="lineheight">{{lineheight}}
+                    </span>
+                    <span v-if="item=='charspacing'">
+                        <input type="range" min="-200" max="800" step="10" @input="setProp(item,$event)" v-model="charspacing">{{charspacing}}
+                    </span>
                 </div>
             </span>
         </div>
         <!--菜单-->
         <menu class="contextMenu" ref="contextMenu" v-show="contextMenuShow">
             <li v-for="(menu,index) in contextMenu" @click="excue(menu.shortcut)" :key="index">
-                {{menu.text}}
+                <span>{{menu.text}}</span>
                 <span class="shortcut">{{menu.value}}</span>
             </li>
         </menu>
@@ -53,11 +63,11 @@ export default {
     name: 'pptEditor',
     props: {
         'width': {
-            type: String,
+            type: Number,
             required: true,
             default: 788
         }, 'height': {
-            type: String,
+            type: Number,
             required: true,
             default: 443
         }, 'isPreview': {
@@ -69,10 +79,11 @@ export default {
     watch: {
         isPreview(v) {
             this.cancelSelect(v)
-        }
+        },
     },
     data() {
         return {
+            fontSize: 12, opacity: 0, border: 0, lineheight: 1, charspacing: 0,
             showShiTiBox: false, showImgBox: false, showSvgBox: false, showVideoBox: false, showTableBox: false,
             jsonData: [], props: [], activeIndex: 0, propType: '',
             propText: [
@@ -84,7 +95,7 @@ export default {
             static: ['undo', 'redo', 'fill', 'stroke', 'back', 'opacity', 'border', 'flipx', 'flipy', 'group', 'ungroup', 'remove', 'lock'],
             group: ['undo', 'redo', 'groupleft', 'groupright', 'grouptop', 'groupbottom', 'groupcenterv', 'groupcenterh', /* 'groupvertical', 'grouphorizontal', */'group', 'ungroup', 'remove', 'lock'],
             isDraw: false,
-            controls: ['info', 'plus', 'minus', 'pen', 'text', 'image', 'shape', 'line', 'table', 'media', 'book', 'view'],
+            controls: [/* 'info', */ 'plus', 'minus', 'pen', 'text', 'image', 'shape', 'line', 'table', 'media', 'book', 'view'],
             canvas: '', draws: [], pages: [{ active: true, id: `canvas-${new Date() * 1}` }],
             contextMenuShow: false,
             contextMenu: [
@@ -93,8 +104,8 @@ export default {
                 { text: '粘贴', value: '⌘V', shortcut: 'paste' },
                 { text: '删除', value: '⌫', shortcut: 'delete' },
                 { text: '锁定/解锁', value: '⌘L', shortcut: 'lock' },
-                { text: '组合', value: '⌘G', shortcut: 'group' },
-                { text: '拆分', value: '⌘↑G', shortcut: 'ungroup' },
+                // { text: '组合', value: '⌘G', shortcut: 'group' },
+                // { text: '拆分', value: '⌘↑G', shortcut: 'ungroup' },
                 { text: '上移', value: '⌘↑', shortcut: 'moveup' },
                 { text: '下移', value: '⌘↓', shortcut: 'movedown' },
                 { text: '顶层', value: '⌘⇧↑', shortcut: 'movefront' },
@@ -108,37 +119,44 @@ export default {
                 'Frutiger', 'Futura', 'Gill Sans', 'Georgia', 'Garamond', 'Hoefler Text', 'Helvetica Neue', 'Helvetica', 'Impact', 'Monaco',
                 'Myriad pro', 'Officina', 'Optima', 'Plaster', 'PingFang SC', 'Roman', 'Times', 'Tahoma', 'Univers', 'Vani', 'Verdanna', // 常用英文字体
             ],
-            objStyle: {}, copyData: [], isFullScreen: false,
+            objStyle: {}, copyData: []
         }
     },
     beforeMount() {
-        //
+        //加载字体
         var container = document.getElementsByTagName("head")[0];
         var addStyle = document.createElement("link");
         addStyle.rel = "stylesheet";
         addStyle.type = "text/css";
         addStyle.media = "screen";
-        addStyle.href = '//at.alicdn.com/t/font_i13gsnet55pl23xr.css';
+        addStyle.href = '//at.alicdn.com/t/font_dku017a8db98jjor.css';
         container.appendChild(addStyle);
+        var meta = document.createElement('meta')
+        meta.name = 'renderer'
+        meta.content = 'webkit'
+        container.appendChild(meta);
     },
     created() {
         // box.oncontextmenu = (e) => { e.preventDefault(); }
-        document.onpaste = (e) => { draw.paste(e) }
-        document.oncopy = (e) => { this.copyData = draw.copy(e) }
-        document.oncut = (e) => { e.preventDefault(); this.copyData = draw.copy(e, true) }
         document.onclick = () => { this.contextMenuShow = false }
-        document.onkeydown = (e) => { draw.keydown(e) }
         document.ondragover = (e) => { e.preventDefault() }
         document.ondrop = (e) => { draw.ondrop(e) }
+        draw.pages = this.pages
+        draw.draws = this.draws
+        draw.width = this.width
+        draw.height = this.height
+        draw.screenChange()
     },
     methods: {
-        stop(){
+        // resize(w, h, p) { draw.resize(w, h, p) },
+        stop() {
             draw.togglePlay()
         },
         contextmenu(e) {
             e.preventDefault();
+            if (this.isPreview) return
             let menu = this.$refs.contextMenu
-            let y = document.body.clientHeight - e.clientY > 378 ? e.clientY : e.clientY - 378
+            let y = document.body.clientHeight - e.clientY > 308 ? e.clientY : e.clientY - 308
             let x = document.body.clientWidth - e.clientX > 212 ? e.clientX : e.clientX - 202
             menu.style.left = x + 'px'
             menu.style.top = y + 'px'
@@ -153,24 +171,7 @@ export default {
             }
         },
         cancelSelect(v) {
-            this.draws.map((x) => {
-                x.isPreview = v
-                let obj = x.getActiveObject()
-                let group = x.getActiveGroup()
-                // console.log(group)
-                obj && (obj.active = false)
-                group && (group.active = false)
-
-                if (group) {
-                    var o = group.getObjects()
-                    // canvas.discardActiveGroup()
-                    let arr = []
-                    o.forEach(function (object) {
-                        object.active = false
-                    })
-                }
-                x.renderAll()
-            })
+            draw.cancelSelect()
         },
         closeBox() {
             this.showShiTiBox = false
@@ -223,16 +224,11 @@ export default {
                 this.$emit('getDataJson', this.jsonData)
             }
         },
-        toggleFullScreent(ele) {
-            !this.isFullScreen ? draw.fullScreen(ele) : draw.exitFullscreen();
-            this.isFullScreen = !this.isFullScreen
-        },
-        setControl(item, obj) {
+        setControl(item) {
             switch (item) {
                 case 'info': break;
                 case 'plus': this.addPage(); break;
                 case 'minus': this.removePage(); break;
-                case 'rotate': draw.setActiveProp('angle', draw.getActiveProp('angle') + 90); break;
                 case 'pen': this.isDraw = !this.isDraw; draw.setFreeDrawingMode(this.isDraw); break;
                 case 'text': this.addComponent('Textbox'); break;
                 case 'image': this.showImgBox = true; break;
@@ -241,20 +237,26 @@ export default {
                 case 'table': this.showTableBox = true; break;
                 case 'media': this.showVideoBox = true; break;
                 case 'book': this.showShiTiBox = true; break;
-                // case 'view': this.toggleFullScreent(this.$refs.drawbox[1]); break;
-                case 'fullscreen': this.toggleFullScreent(this.$refs.pages); break;
+                case 'view': draw.elementFullScreen(this.$refs.pages); break;
+                // case 'fullscreen': this.toggleFullScreen(this.$refs.pages); break;
             }
             item != 'pen' && (this.isDraw = false, draw.setFreeDrawingMode(false))
             this.cancelSelect(false)
         },
         activeCanvas(index, event) {
-            this.pages.map(x => x.active = false)
-            this.pages[index].active = true
-            this.canvas = this.draws[index]
-            draw.init(this.canvas)
-            draw.setFreeDrawingMode(this.isDraw)
-            this.activeIndex = index
-            history.init(this.canvas)
+            if (!this.pages[index].active) {
+                this.pages.map(x => x.active = false)
+                this.pages[index].active = true
+                this.canvas = this.draws[index]
+                draw.init(this.canvas)
+                draw.setFreeDrawingMode(this.isDraw)
+                this.activeIndex = index
+                history.init(this.canvas)
+
+                let obj = draw.getSelected()
+                let group = draw.getSelectedGroup()
+                this.props = obj ? (obj.text ? this.propText : this.static) : (group ? this.group : [])
+            }
         },
         toggleProp(type) {
             let align = 'Left'
@@ -397,17 +399,15 @@ export default {
             }, 300, id);
         },
         removePage(index) {
-            let deleteIndex = 0
-            if (index == undefined) {
-                deleteIndex = this.pages.indexOf(this.pages.filter(x => x.active)[0])
-            } else {
-                deleteIndex = index
-            }
+            let deleteIndex = index || this.activeIndex
+
             if (this.pages.length > 1) {
                 this.pages.splice(deleteIndex, 1)
                 this.draws.splice(deleteIndex, 1)
+                this.activeIndex = deleteIndex - 1
+                this.updateJosn()
             }
-            this.updateJosn()
+
         },
         setStyle(name, value) {
             draw.setActiveStyle(name, value > 0 ? parseFloat(value) : value)
@@ -417,7 +417,7 @@ export default {
             switch (type) {
                 case 'cut': document.execCommand('cut'); break;
                 case 'copy': document.execCommand('copy'); break;
-                case 'paste': let obj = JSON.parse(this.copyData); this.canvas.loadObjFormJson(obj); break;
+                case 'paste': let obj = JSON.parse(draw.copyData); this.canvas.loadObjFormJson(obj); break;
                 case 'delete': draw.removeSelected(); break;
                 case 'lock': draw.toggleLock(); break;
                 case 'group': draw.group(); break;
@@ -453,13 +453,13 @@ export default {
         },
         addComponent(shap, item) {
             switch (shap) {
-                case 'svg': if (item.src) draw.addShapeByUrl(item.src); else if (item.data) draw.loadSVG(item.data); break;
+                case 'svg': if (item.src) draw.addShapeByUrl(item.src); else if (item.data) draw.loadSVG(item.data,item.options); break;
                 case 'Line': draw.addLine(); break
                 case 'Circle': draw.addCircle(); break
                 case 'Triangle': draw.addTriangle(); break
                 case 'Polygon': draw.addPolygon(); break
                 case 'Rect': draw.addRect(); break
-                case 'Textbox': draw.addTextbox({ text: '双击修改文字', fontSize: 14, left: 20, top: 20 }); break
+                case 'Textbox': draw.addIText({ text: '双击修改文字', fontSize: 14, left: 20, top: 20 }); break
                 case 'video': draw.createVideo(item.src); break
                 case 'image': draw.addImage({ src: item.src, }); break;
             }
@@ -528,7 +528,6 @@ export default {
 
         history.init(canvas)
         this.draws.push(canvas)
-
     },
 
 }

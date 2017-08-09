@@ -8,6 +8,10 @@ let component = {}
 
 let SVGNS = 'http://www.w3.org/2000/svg'
 
+String.prototype.trim = function () {
+  return this.replace(/^\s+|\s+$/gm, '')
+}
+
 Element.prototype.el = function (name, opt) {
   let el = document.createElementNS(SVGNS, name)
   this.appendChild(el)
@@ -74,10 +78,19 @@ component.table = (width, height, opt) => {
 }
 
 component.radio = (opt) => {
-  if (typeof opt != 'object') return
+  if (typeof opt != 'object') return ''
+  if (!opt.title || !opt.title.trim()) {
+    alert('请输入题目！')
+    return ''
+  }
+  let n = opt.keys.filter(x => !x.text || !x.text.trim())[0]
+  if (n) {
+    alert('请输入完整的答案！')
+    return ''
+  }
   let root = document.createElementNS(SVGNS, 'svg')
   let title = root.el('text')
-  title.innerHTML = opt.title || '这是一道单选题'
+  title.innerHTML = opt.title
   title.attr('y', 20)
   let opts = opt.keys || []
   if (opts.length > 0) {
@@ -112,22 +125,30 @@ component.radio = (opt) => {
           // 'stroke-width': 1
         })
       }
-
-
     })
   }
   return root
 }
 
 component.checkbox = (opt) => {
-  if (typeof opt != 'object') return
+  if (typeof opt != 'object') return ''
+  if (!opt.title || !opt.title.trim()) {
+    alert('请输入题目！')
+    return ''
+  }
+  let n = opt.keys.filter(x => !x.text || !x.text.trim())[0]
+  if (n) {
+    alert('请输入完整的答案！')
+    return ''
+  }
   let root = document.createElementNS(SVGNS, 'svg')
   let title = root.el('text')
-  title.innerHTML = opt.title || '这是一道单选题'
+  title.innerHTML = opt.title
   title.attr('y', 20)
   let opts = opt.keys || []
   if (opts.length > 0) {
     opts.map((x, i) => {
+
       let o = root.el('text')
       o.attr({
         x: 50,
@@ -169,8 +190,17 @@ component.checkbox = (opt) => {
 
 component.sqa = (opt) => {
   opt = opt || {}
-  let a = opt.A || '你为什么不输入标题？'
-  let q = opt.Q || '因为我忘记输入答案了，但是我可能是故意的，因为我忘记输入答案了，\n\n\n\n但是我可能是故意 '
+  let a = opt.A || ''
+  let q = opt.Q || ''
+  if (!a.trim()) {
+    alert('请输入题目！')
+    return ''
+  }
+  if (!q.trim()) {
+    alert('请输入答案！')
+    return ''
+  }
+
   let root = document.createElementNS(SVGNS, 'svg')
   let _a = root.el('text')
   _a.attr({
@@ -203,7 +233,10 @@ component.line = (opt) => {
   if (keys.length > 0) {
     let root = document.createElementNS(SVGNS, 'svg')
     // title
-
+    if (!opt.title || !opt.title.trim()) {
+      alert('请输入题目！')
+      return ''
+    }
     let title = root.el('text')
     title.attr({
       y: 25
@@ -212,7 +245,13 @@ component.line = (opt) => {
     // options
     let l = keys.filter(x => x.type == 1)
     let r = keys.filter(x => x.type == 2)
+    let n = keys.filter(x => !x.text || !x.text.trim())[0]
+    if (n) {
+      alert('请输入完整的答案！')
+      return ''
+    }
     l.map((x, i) => {
+
       // left
       let t = root.el('text')
       t.attr({
@@ -227,7 +266,7 @@ component.line = (opt) => {
       let d = r.filter(y => y.value == x.value)[0]
       let index = r.indexOf(d)
       line.attr({
-        x1: x.text.length * 15+15,
+        x1: x.text.length * 15 + 15,
         y1: 25 * (i + 2) - 5,
         x2: 318,
         y2: 25 * (index + 2) - 5,

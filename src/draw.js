@@ -59,6 +59,28 @@ draw.init = (_canvas) => {
     .on('group:selected', render)
     .on('path:created', render)
     .on('selection:cleared', render)
+
+
+  let box = canvas.wrapperEl //upperCanvasEl
+  box.setAttribute('tabindex', 1)
+  box.addEventListener('blur',function(){
+    setTimeout(()=>{
+      // draw.cancelSelect()
+      document.oncopy = null
+      document.onpaste = null
+      document.oncut = null
+    },300)
+    
+  },false)
+
+  box.onkeydown = draw.keydown
+
+  box.onfocus = function(){
+    document.oncopy = draw.copy
+    document.onpaste = draw.paste
+    document.oncut = (e)=>draw.copy(e,true)
+  }
+
   // .on('mouse:down', (options) => {
   //   isDown = true
   //   viewportLeft = canvas.viewportTransform[4]
@@ -69,13 +91,13 @@ draw.init = (_canvas) => {
   //   _drawSelection = canvas._drawSelection
   //   canvas._drawSelection = () => {}
   // })
-  /* .on('mouse:wheel', (opt) => { // 鼠标滚轮缩放
+   /* .on('mouse:wheel', (opt) => { // 鼠标滚轮缩放
     var e = opt.e
     var newZoom = canvas.getZoom() + e.deltaY / 300
     if (newZoom <= 0.2 || newZoom >= 5) {
       return
     }
-
+    console.log(newZoom)
     canvas.zoomToPoint({
       x: e.offsetX,
       y: e.offsetY
@@ -83,7 +105,7 @@ draw.init = (_canvas) => {
 
     // renderVieportBorders();
     e.preventDefault()
-    }) */
+    })  */
   // .on('mouse:move', (opt) => {
   //   var currentMouseLeft = opt.e.x
   //   var currentMouseTop = opt.e.y
@@ -141,28 +163,7 @@ const setActiveStyle = function (styleName, value, object) {
   object.setCoords()
   canvas.renderAll()
 }
-{
-  draw.fullScreen=(element)=>{
-    if (element.requestFullscreen) {  
-        element.requestFullscreen();  
-    } else if (element.mozRequestFullScreen) {  
-        element.mozRequestFullScreen();  
-    } else if (element.webkitRequestFullscreen) {  
-        element.webkitRequestFullscreen();  
-    } else if (element.msRequestFullscreen) {  
-        element.msRequestFullscreen();  
-    }  
-  }
-  draw.exitFullscreen=()=>{
-    if (document.exitFullscreen) {  
-        document.exitFullscreen();  
-    } else if (document.mozCancelFullScreen) {  
-        document.mozCancelFullScreen();  
-    } else if (document.webkitExitFullscreen) {  
-        document.webkitExitFullscreen();  
-    }  
-  }
-}
+
 {
   draw.setActiveStyle = setActiveStyle
   draw.getActiveStyle = getActiveStyle
@@ -510,8 +511,20 @@ const setActiveStyle = function (styleName, value, object) {
     }))
   }
 
-  draw.addText = function (text = '双击修改文字') {
-    var textSample = new qdraw.Text(text.slice(0, getRandomInt(0, text.length)), {
+  draw.addText = function (options) {
+    options.originX = 'left'
+    options.hasRotatingPoint = true
+    options.centerTransform = true
+    // options.width = options.width || 300
+    options.hasRotatingPoint=true
+    options.centerTransform = true
+    options.fontFamily ='微软雅黑'
+    options.fontWeight = options.fontWeight || ''
+    options.width = options.text.length*16>600?600:options.text.length*16
+    let text = new qdraw.Text(options.text, options)
+    let c =['ml','mr','mt','mb']
+    c.map((x)=>{text['setControlVisible'](x,false)})
+    /* var textSample = new qdraw.Text(text.slice(0, getRandomInt(0, text.length)), {
       left: getRandomInt(350, 400),
       top: getRandomInt(350, 400),
       fontFamily: 'helvetica',
@@ -523,9 +536,9 @@ const setActiveStyle = function (styleName, value, object) {
       originX: 'left',
       hasRotatingPoint: true,
       centerTransform: true
-    })
+    }) */
 
-    canvas.add(textSample)
+    canvas.add(text)
   }
 
   draw.addTextbox = function (options) {
@@ -534,8 +547,6 @@ const setActiveStyle = function (styleName, value, object) {
     options.hasRotatingPoint = true
     options.centerTransform = true
     // options.width = options.width || 300
-    options.hasRotatingPoint=true
-    options.centerTransform = true
     options.fontFamily ='微软雅黑'
     options.fontWeight = options.fontWeight || ''
     options.width = options.text.length*16>600?600:options.text.length*16
@@ -560,10 +571,21 @@ const setActiveStyle = function (styleName, value, object) {
     canvas.add(text)
   }
 
-  draw.addIText = function (text = '双击修改文字') {
+  draw.addIText = function (options) {
     // var text = '那么，简课是用来干嘛的呢，我就来说说吧,\n他就是一个非常牛逼的...'
-
-    var textSample = new qdraw.IText(text.slice(0, getRandomInt(0, text.length)), {
+    options.originX = 'left'
+    options.hasRotatingPoint = true
+    options.centerTransform = true
+    // options.width = options.width || 300
+    options.hasRotatingPoint = true
+    options.centerTransform = true
+    options.fontFamily = '微软雅黑'
+    options.fontWeight = options.fontWeight || ''
+    options.width = options.text.length * 16 > 600 ? 600 : options.text.length * 16
+    let text = new qdraw.IText(options.text, options)
+    let c = ['ml', 'mr', 'mt', 'mb']
+    c.map((x) => { text['setControlVisible'](x, false) })
+    /* var textSample = new qdraw.IText(text.slice(0, getRandomInt(0, text.length)), {
       left: 100, // getRandomInt(350, 400),
       top: 100, // getRandomInt(350, 400),
       fontFamily: 'helvetica',
@@ -575,9 +597,9 @@ const setActiveStyle = function (styleName, value, object) {
       originX: 'left',
       hasRotatingPoint: true,
       centerTransform: true
-    })
+    }) */
 
-    canvas.add(textSample)
+    canvas.add(text)
   }
 
   draw.addShapeByUrl = function (svgUrl) {
@@ -671,14 +693,14 @@ const setActiveStyle = function (styleName, value, object) {
       var objectsInGroup = activeGroup.getObjects()
       canvas.discardActiveGroup()
       objectsInGroup.forEach(function (object) {
-        if (activeObject.getElement) {
-          activeObject.getElement().pause()
+        if (object.getElement) {
+          object._element = null
         }
         canvas.remove(object)
       })
     } else if (activeObject) {
       if (activeObject.getElement) {
-        activeObject.getElement().pause()
+        activeObject._element = null
       }
       canvas.remove(activeObject)
     }
@@ -879,6 +901,83 @@ draw.consoleJSONValue = consoleJSONValue
 draw.consoleSVGValue = consoleSVGValue
 draw.consoleValue = consoleValue
 {
+  draw.isFullScreen = () => {return document.fullscreenEnabled || window.fullScreen || document.webkitIsFullScreen || document.msFullscreenEnabled||false;}//return document.fullscreenElement || document.msFullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement || false;}
+  draw.elementFullScreen = (element) =>{
+    if (element.requestFullscreen) {  
+        element.requestFullscreen();  
+    } else if (element.mozRequestFullScreen) {  
+        element.mozRequestFullScreen();  
+    } else if (element.webkitRequestFullscreen) {  
+        element.webkitRequestFullscreen();  
+    } else if (element.msRequestFullscreen) {  
+        element.msRequestFullscreen();  
+    }  
+  }
+  draw.resize = (w, h, p = false) => {
+    draw.draws.map((c) => {
+      c.isPreview = p
+      // 中心点 / 比例
+      let cWidth = c.width
+      let cHeight = c.height
+      let ratio = cWidth / cHeight
+      // let x = c.viewportTransform[4]
+      // let y = c.viewportTransform[5]
+
+      // 重新定义宽高
+      let newHeight = h
+      let newWidth = h * ratio
+
+      c.setDimensions({ height: newHeight, width: newWidth })
+      //等比缩放,  中心点， 比例
+      let zoomRatio = newWidth / cWidth
+      c.zoomToPoint({ x: newHeight / 2, y: newWidth / 2 }, zoomRatio);
+
+      //坐标偏移
+      // let offsetX = (newWidth - cWidth) * zoomRatio / ratio / 2;
+      // let offsetY = (newHeight - cHeight) * zoomRatio / ratio / 2;
+      // console.log(newWidth, cWidth,offsetX,offsetY,zoomRatio,ratio)
+      c.viewportTransform[4] = 0
+      c.viewportTransform[5] = 0
+    })
+  }
+  // 手动退出全屏不可取
+  /* draw.exitFullScreen=()=>{
+    if (document.exitFullscreen) {  
+        document.exitFullscreen();  
+    } else if (document.mozCancelFullScreen) {  
+        document.mozCancelFullScreen();  
+    } else if (document.webkitExitFullscreen) {  
+        document.webkitExitFullscreen();  
+    }  
+  } */
+  draw.toggleFullScreen = (box) =>{
+    box = box || document.getElementsByClassName('pages')[0]
+    if (draw.isFullScreen()) {
+      let w = window.screen.width //document.body.clientWidth
+      let h = window.screen.height  //document.body.clientHeight
+      box.style.background = '#000'
+      box.style.overflow = 'hidden'
+      box.style.padding = '0'
+      box.style.margin = '0'
+      draw.resize(w,h,true)
+    } else {
+      box.style = ''
+      draw.draws.map((c) => {
+        c.isPreview = false
+        c.setDimensions({ height: draw.height, width: draw.width })
+        c.zoomToPoint({ x: draw.width / 2, y: draw.height / 2 }, 1);
+      })
+    }
+    draw.render()
+  }
+  draw.screenChange = ()=>{
+    let doc = document
+    doc.addEventListener('fullscreenchange',(e) => { draw.toggleFullScreen() },false);
+    doc.addEventListener('msfullscreenchange' , (e) => {draw.toggleFullScreen() },false);
+    doc.addEventListener('mozfullscreenchange' , (e) => {draw.toggleFullScreen() },false);
+    doc.addEventListener('webkitfullscreenchange' , (e) => {draw.toggleFullScreen() },false);
+  } 
+  
   draw.ondrop = (e) => {
     e.preventDefault()
     var fs = e.dataTransfer.files
@@ -899,9 +998,9 @@ draw.consoleValue = consoleValue
     let key = e.keyCode
     if (key == 46 || key == 8) {
       draw.removeSelected()
-      return
+      return false
     }
-    let obj = draw.getSelected()
+    //c67  v=>86  x=>88
     // if (obj) {
     if (e.ctrlKey)  //shift +ctrl
     {
@@ -915,11 +1014,14 @@ draw.consoleValue = consoleValue
       if (key == 76) { draw.toggleLock() }
       return
     }
+    let obj = draw.getSelected()
+    if(!obj) return    
     if (key == 37) { let x = obj.left - 10; draw.setLeft(x) }
     if (key == 38) { let y = obj.top - 10; draw.setTop(y) }
     if (key == 39) { let x = obj.left + 10; draw.setLeft(x) }
     if (key == 40) { let y = obj.top + 10; draw.setTop(y) }
   }
+  draw.copyData = null
   draw.copy = (e, cut) => {
     e.preventDefault()
     let board = e.clipboardData || window.clipboardData
@@ -930,6 +1032,7 @@ draw.consoleValue = consoleValue
     let str = JSON.stringify(obj)
     board.setData('text', str)
     cut && draw.removeSelected()
+    draw.copyData = str
     return str
   }
   draw.paste = (e) => {
@@ -950,6 +1053,7 @@ draw.consoleValue = consoleValue
       }
     }
     // 判断是否为图片数据
+    console.log(item)
     if (item && item.kind === 'file' && item.type.match(/^image\//i)) {
       // 读取该图片            
       var file = item.getAsFile()
@@ -962,19 +1066,21 @@ draw.consoleValue = consoleValue
       return
     }
     let data = board.getData('text')
-    try {
-      let obj = JSON.parse(data)
-      canvas.loadObjFormJson(obj)
-    } catch (e) { }
+    // try {
+      if (data.indexOf('[{"type":') == 0) {
+        let obj = JSON.parse(data)
+        canvas.loadObjFormJson(obj)
+      } else {
+        draw.addIText({ text: data, fontSize: 14, left: 20, top: 20 })
+      }
+    // } catch (e) { }
   }
   draw.group = () => {
     let x = canvas.getActiveGroup()
-    if(!x.getObjects) return
+    if(!x||!x.getObjects) return
     let y = x.getObjects()
     let groups = []
-    y.map((x) => {
-      groups.push(clone(x))
-    })
+    y.map((x) => { groups.push(clone(x)) })
     let opt = { left: x.left, top: x.top, angle: x.angle, scaleX: x.scaleX, scaleY: x.scaleY }
     let group = new qdraw.Group(groups, opt)
     group.isGroup = true
@@ -985,8 +1091,21 @@ draw.consoleValue = consoleValue
 
   draw.ungroup = () => {
     let o = canvas.getActiveObject()
-    if (!o.getObjects) return
+    if (!o||!o.getObjects) return
+    // console.log(o,o.getObjects())
+    o.getObjects().map((x)=>{
+      // console.log('x:',x.left,'y:',x.top,'w:',x.width* (x.zoomX || 1),'h:',x.height* (x.zoomY || 1))
+    })
+    // return;
     let data = JSON.parse(JSON.stringify(o.getObjects()))
+    // let data = clone(o.getObjects())
+    // let g=[]
+
+    // o.getObjects().map(x=>g.push(x))
+    // draw.removeSelected()
+    // console.log(g)
+    // canvas.add.apply(canvas, g)
+    // return
     data.map((x) => {
       x.skewX = o.skewX
       x.skewY = o.skewY
@@ -1003,9 +1122,29 @@ draw.consoleValue = consoleValue
       x.top < 0 && (x.top = 100)
     })
     canvas.loadObjFormJson(data)
+    // canvas.add.apply(canvas, g)
     draw.removeSelected()
     return
   }
+  draw.cancelSelect = () => {
+    let obj = canvas.getActiveObject()
+    let group = canvas.getActiveGroup()
+    // console.log(group)
+    obj && (obj.active = false,obj.setCoords())
+    group && (group.active = false,group.setCoords())
+
+    if (group) {
+      var o = group.getObjects()
+      // canvas.discardActiveGroup()
+      let arr = []
+      o.forEach(function (object) {
+        object.active = false
+      })
+    }
+    canvas.renderAll()
+  }
+
+
   draw.getConsoleJSON = () => {
     return consoleJSONValue
   }
@@ -1026,22 +1165,23 @@ draw.consoleValue = consoleValue
   }
 
   draw.loadSVGWithoutGrouping = function (svg) {
-    qdraw.loadSVGFromString(svg, function (objects) {
-      console.log(objects)
-     
+    qdraw.loadSVGFromString(svg, function (objects) { 
+      // console.log(objects)
       canvas.add.apply(canvas, objects)
       canvas.renderAll()
     })
   }
-  draw.loadSVG = function (svgStr) {
-    _loadSVG(svgStr)
+  draw.loadSVG = function (svgStr,options) {
+    _loadSVG(svgStr,options)
     // _loadSVG(consoleSVGValue)
   }
 
-  var _loadSVG = function (svg) {
+  var _loadSVG = function (svg,opts) {
     qdraw.loadSVGFromString(svg, function (objects, options) {
       var obj = qdraw.util.groupSVGElements(objects, options)
-      
+      if(typeof opts ==='object'){
+        Object.keys(opts).map(x=>obj[x]=opts[x])
+      }
       canvas.add(obj).centerObject(obj).renderAll()
       obj.setCoords()
     })

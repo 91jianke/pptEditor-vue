@@ -11,11 +11,10 @@
     position: relative;
     flex-direction: row; // position: relative;
     .draw-box {
-        background: #ffffff;
-        border: 1px solid #bbb;
-        box-shadow: 1px 1px 50px #b7b7b7; // display: flex;
+        // background: #ffffff;
         // flex: 1;
-        float: left;
+        // float: left;
+        // display: inline-block;
         margin-bottom: 30px;
         position: relative;
         .view {
@@ -30,9 +29,16 @@
                 display: block;
             }
         }
+        .canvas-container {
+            background: #fff;
+            border: 1px solid #bbb;
+            box-shadow: 1px 1px 50px #b7b7b7; // display: flex;
+        }
     }
     &>.active {
-        border: 1px solid #059fe6;
+        .canvas-container {
+            border: 1px solid #059fe6;
+        }
     }
     .contorl {
         float: left;
@@ -42,9 +48,9 @@
         margin-left: 20px;
         align-items: center;
         font-size: 0;
-        position: fixed;
-        left: 879px;
-        top: 98px;
+        position: absolute;
+        right: 8px;
+        z-index: 9; // top: 88px;
         span {
             display: flex;
             flex: 1;
@@ -65,7 +71,7 @@
 .dask {
     background: rgba(0, 0, 0, 0.2);
     position: fixed;
-    z-index: 99;
+    z-index: 999;
     top: 0;
     left: 0;
     bottom: 0;
@@ -77,14 +83,14 @@
         width: 80%;
         max-width: 900px;
         min-width: 600px;
-        height: 50%;
+        height: 445px;
         background: #fff;
         border-radius: 3px;
         box-shadow: 0 0 24px #a7a7a7;
         overflow: hidden;
         display: flex;
         flex-direction: column;
-        .title {
+        .dlg-title {
             background: #ddd;
             border-bottom: 1px solid #ddd;
             height: 40px;
@@ -113,7 +119,7 @@
                 }
             }
         }
-        .content {
+        .dlg-content {
             display: flex;
             flex: 1;
             .img-box {
@@ -232,9 +238,9 @@
     z-index: 100;
     top: 11px;
     border-radius: 3px; // display: flex;
-    display: flex;
-    // overflow: hidden; // padding: 5px;
-    span {
+    display: flex; // overflow: hidden; // padding: 5px;
+    &>span {
+        border-radius: 2px;
         flex: 1;
         color: #fff;
         font-size: 20px;
@@ -244,7 +250,9 @@
         box-sizing: border-box;
         &:hover {
             background: orange;
-            .range, .fonts,.colorbox {
+            .range,
+            .fonts,
+            .colorbox {
                 display: block;
             }
         }
@@ -253,16 +261,27 @@
         position: absolute;
         top: 32px;
         left: 0;
-        height: 140px;
+        height: 38px;
         background: #eee;
-        width: 38px;
+        padding: 0 10px; // width: 38px;
+        width: 170px;
         display: none;
+        border-radius: 2px;
+        color: #999;
+        &>span {
+            white-space: nowrap;
+            input {
+                display: inline-block;
+            }
+        }
     }
     input[type=range] {
-        transform: rotate(90deg);
+        // transform: rotate(90deg);
         transform-origin: 12% 78%;
         width: 120px;
         height: 20px;
+        vertical-align: middle;
+        margin-right: 5px;
     }
     .fonts {
         position: absolute;
@@ -273,17 +292,27 @@
         height: 300px;
         overflow: scroll;
         display: none;
+        border-radius: 2px;
         span {
             display: block;
             font-size: 14px;
+            height: 38px;
+            line-height: 38px;
             color: #999;
             width: 100%;
+            padding: 0 5px;
+            border-radius: 2px;
+            cursor: pointer;
+            &:hover {
+                background: orange;
+                color: #fff;
+            }
         }
     }
     .colorbox {
         position: absolute;
         background: #fff;
-        left:0;
+        left: 0;
         border: 1px solid #f5f5f5;
         display: none;
     }
@@ -308,7 +337,8 @@
         &:hover {
             background: #ddd;
         }
-        &:nth-child(4), &:nth-child(5) {
+        &:nth-child(4),
+        &:nth-child(5) {
             border-bottom: 1px solid #e0e0e0;
         }
     }
@@ -320,7 +350,8 @@
     box-sizing: border-box;
     height: 26px;
     text-align: left;
-    input[type=text], input[type=number] {
+    input[type=text],
+    input[type=number] {
         border: 1px solid #ddd;
         padding: 3px 5px;
         width: 100px;
@@ -378,6 +409,7 @@
     color: #999; // width: 80%;
     text-align: left;
     margin: 0 auto;
+    position: relative;
     h1 {
         font-size: 15px;
         margin-bottom: 15px;
@@ -396,16 +428,29 @@
         margin-left: 10px;
         margin-bottom: 10px;
         height: 29px;
-        input[type=radio], input[type=checkbox] {
+        input[type=radio],
+        input[type=checkbox] {
             margin-right: 5px;
         }
-        input[type=button], .b-r, .b-l {
+        input[type=button] {
             border-radius: 50% !important;
             height: 29px;
             width: 29px !important;
             margin-left: 10px;
             color: #5f5f5f;
             text-align: center;
+            display: inline-block;
+            vertical-align: middle;
+            line-height: 29px;
+        }
+        .b-r,
+        .b-l {
+            display: inline-block;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            border: 1px solid #ddd;
+            margin: 0;
         }
         .b-r {
             border-color: red !important;
@@ -415,12 +460,12 @@
             border-color: blue !important;
             color: blue;
         }
-        input[type=text]{
+        input[type=text] {
             width: 317px;
         }
     }
-    
-    input[type=text], textarea {
+    input[type=text],
+    textarea {
         border: 1px solid #ccc;
         padding: 6px 8px;
         border-radius: 2px;
@@ -434,10 +479,20 @@
     }
     .right {
         float: right;
+        margin-left: 20px;
     }
-    .left,.right{
-        input[type=text]{
-            width:auto ;
+    canvas {
+        position: absolute;
+        z-index: 0;
+        background: #ddd;
+        left: 172px;
+    }
+    .left,
+    .right {
+        position: relative;
+        z-index: 1;
+        input[type=text] {
+            width: auto;
         }
     }
 }
