@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/chuchur/pptEditor-vue#readme",
   "dependencies": {
-    "qdraw": "^1.2.3"
+    "qdraw": "^1.2.3",
+    "colorpicker-vue": "^1.0.3"
   }
 }

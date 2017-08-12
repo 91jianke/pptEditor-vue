@@ -42,7 +42,7 @@ const getRandomNum = (min, max) => {
 }
 let canvas = null
 
-draw.init = (_canvas) => {
+draw.init = (_canvas,callback) => {
   canvas = _canvas
   const render = () => {
     canvas.renderAll()
@@ -55,10 +55,10 @@ draw.init = (_canvas) => {
   // let isDown = false
 
   canvas
-    .on('object:selected', render)
-    .on('group:selected', render)
-    .on('path:created', render)
-    .on('selection:cleared', render)
+    .on('object:selected', callback)
+    .on('selection:cleared', callback)
+    .on('group:selected', callback)
+    .on('path:created', callback)
 
 
   let box = canvas.wrapperEl //upperCanvasEl
@@ -1053,7 +1053,6 @@ draw.consoleValue = consoleValue
       }
     }
     // 判断是否为图片数据
-    console.log(item)
     if (item && item.kind === 'file' && item.type.match(/^image\//i)) {
       // 读取该图片            
       var file = item.getAsFile()
@@ -1067,12 +1066,20 @@ draw.consoleValue = consoleValue
     }
     let data = board.getData('text')
     // try {
-      if (data.indexOf('[{"type":') == 0) {
-        let obj = JSON.parse(data)
-        canvas.loadObjFormJson(obj)
-      } else {
-        draw.addIText({ text: data, fontSize: 14, left: 20, top: 20 })
+    if (data.indexOf('[{"type":') == 0) {
+      let obj = JSON.parse(data)
+      let o = obj[0].type == 'group' ? obj[0].objects : obj
+      if (o.length > 1) {
+        let _o = obj[0]
+        o.map((x) => {
+          x.left = _o.left + x.left + _o.width / 2
+          x.top = _o.top + x.top + _o.height / 2
+        })
       }
+      canvas.loadObjFormJson(o)
+    } else {
+      draw.addIText({ text: data, fontSize: 14, left: 20, top: 20 })
+    }
     // } catch (e) { }
   }
   draw.group = () => {
@@ -1116,10 +1123,8 @@ draw.consoleValue = consoleValue
       o.zoomY > 1 && (x.zoomY = o.zoomY)
       o.scaleX > 1 && (x.scaleX = o.scaleX)
       o.scaleY > 1 && (x.scaleY = o.scaleY)
-      x.left = x.left * (x.zoomX || 1) + o.left - 10
-      x.top = x.top * (x.zoomY || 1) + o.top - 10
-      x.left < 0 && (x.left = 100)
-      x.top < 0 && (x.top = 100)
+      x.left = o.left + x.left + o.width / 2
+      x.top = o.top + x.top + o.height / 2
     })
     canvas.loadObjFormJson(data)
     // canvas.add.apply(canvas, g)

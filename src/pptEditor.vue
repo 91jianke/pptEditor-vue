@@ -5,7 +5,7 @@
             <span :class="(item=='pen'&&isDraw)?'active jk-'+item:'jk-'+item" v-for="(item,index) in controls" @click="setControl(item)" :key="index"></span>
         </div>
         <!--画板-->
-        <div draggable="true" tabindex="0" :class="item.active?'draw-box active':'draw-box'" v-for="(item,index) in pages" @dblclick="stop()" :isPreview="isPreview" @click="activeCanvas(index)" @contextmenu="contextmenu($event)" @mouseup="showTools(item.active,$event)" :key="index">
+        <div draggable="true" tabindex="0" :class="item.active?'draw-box active':'draw-box'" v-for="(item,index) in pages" @dblclick="stop()" :isPreview="isPreview" @click="activeCanvas(index)" @contextmenu="contextmenu($event)" :key="index">
             <div class="view" v-show="!item.active&&!isPreview" :style="`width:${width}px;height:${height}px;`">
                 <span>单击编辑</span>
             </div>
@@ -15,26 +15,26 @@
         <div class="prop-box" v-show="!isPreview" :style="`top:${(height+32)*activeIndex+11}px;`">
             <span :class="`jk-${item}`" v-for="(item,index) in props" @click.stop="setProp(item)" @mousemove="propType=item" :key="index">
                 <div class="colorbox" v-if="'fill stroke back'.indexOf(item)>-1">
-                    <colorPiker @change="colorChange" />
+                    <colorPiker @change="colorChange" :showView="false" :isShow="true" />
                 </div>
                 <div class="fonts" v-if="item == 'text'">
                     <span v-for="(f,index) in fonts" @click.stop="setProp(item,f)" :key="index">{{f}}</span>
                 </div>
                 <div class="range" v-if="'font opacity border lineheight charspacing'.indexOf(item)>-1">
                     <span v-if="item=='font'">
-                        <input type="range" min="12" max="100" step="1" @input="setProp(item,$event)" v-model="fontSize">{{fontSize}}
+                        <input type="range" min="7" max="100" step="1" @input="setProp(item,$event)" v-model="fontSize">{{fontSize}}
                     </span>
                     <span v-if="item=='opacity'">
                         <input type="range" min="0" max="1" step="0.1" @input="setProp(item,$event)" v-model="opacity">{{opacity}}
                     </span>
                     <span v-if="item=='border'">
-                        <input type="range" v-if="item=='border'" value="1" min="1" max="30" step="1" @input="setProp(item,$event)" v-model="border">{{border}}
+                        <input type="range" v-if="item=='border'" value="1" min="0" max="30" step="1" @input="setProp(item,$event)" v-model="strokeWidth">{{strokeWidth}}
                     </span>
                     <span v-if="item=='lineheight'">
-                        <input type="range" min="0" max="10" step="0.1" @input="setProp(item,$event)" v-model="lineheight">{{lineheight}}
+                        <input type="range" min="0.1" max="10" step="0.1" @input="setProp(item,$event)" v-model="lineHeight">{{lineHeight}}
                     </span>
                     <span v-if="item=='charspacing'">
-                        <input type="range" min="-200" max="800" step="10" @input="setProp(item,$event)" v-model="charspacing">{{charspacing}}
+                        <input type="range" min="-200" max="800" step="10" @input="setProp(item,$event)" v-model="charSpacing">{{charSpacing}}
                     </span>
                 </div>
             </span>
@@ -56,10 +56,11 @@ import draw from './draw'
 import compUI from './compUI'
 import history from './history'
 
-import colorPiker from 'color-picker-vue'
+// import colorPiker from 'color-picker-vue'
+import colorPiker from 'colorpicker-vue'
 
 export default {
-    components: { compUI, colorPiker },
+    components: { compUI, colorPiker, },
     name: 'pptEditor',
     props: {
         'width': {
@@ -83,7 +84,7 @@ export default {
     },
     data() {
         return {
-            fontSize: 12, opacity: 0, border: 0, lineheight: 1, charspacing: 0,
+            fontSize: 12, opacity: 0, strokeWidth: 0, lineHeight: 1, charSpacing: 0,
             showShiTiBox: false, showImgBox: false, showSvgBox: false, showVideoBox: false, showTableBox: false,
             jsonData: [], props: [], activeIndex: 0, propType: '',
             propText: [
@@ -248,14 +249,10 @@ export default {
                 this.pages.map(x => x.active = false)
                 this.pages[index].active = true
                 this.canvas = this.draws[index]
-                draw.init(this.canvas)
+                draw.init(this.canvas, this.callback)
                 draw.setFreeDrawingMode(this.isDraw)
                 this.activeIndex = index
                 history.init(this.canvas)
-
-                let obj = draw.getSelected()
-                let group = draw.getSelectedGroup()
-                this.props = obj ? (obj.text ? this.propText : this.static) : (group ? this.group : [])
             }
         },
         toggleProp(type) {
@@ -267,10 +264,10 @@ export default {
                 case 'linethrough': draw.toggleLinethrough(); break;
                 case 'overline': draw.toggleOverline(); break;
                 // case 'lock': draw.toggleLock(); break;
-                case 'alignleft': draw.setActiveProp('textAlign', 'left'); break;
-                case 'alignright': draw.setActiveProp('textAlign', 'right'); break;
-                case 'aligncenter': draw.setActiveProp('textAlign', 'center'); break;
-                case 'alignjustify': draw.setActiveProp('textAlign', 'justify'); break;
+                case 'alignleft':
+                case 'alignright':
+                case 'aligncenter':
+                case 'alignjustify': draw.setActiveProp('textAlign', type); break;
             }
             this.updateJosn()
         },
@@ -453,7 +450,7 @@ export default {
         },
         addComponent(shap, item) {
             switch (shap) {
-                case 'svg': if (item.src) draw.addShapeByUrl(item.src); else if (item.data) draw.loadSVG(item.data,item.options); break;
+                case 'svg': if (item.src) draw.addShapeByUrl(item.src); else if (item.data) draw.loadSVG(item.data, item.options); break;
                 case 'Line': draw.addLine(); break
                 case 'Circle': draw.addCircle(); break
                 case 'Triangle': draw.addTriangle(); break
@@ -470,17 +467,6 @@ export default {
         },
         getObjStyle() {
             draw.getObjStyle()
-        },
-        showTools(active, event) {
-            if (this.isPreview || !active) return
-            this.updateJosn()
-            if (event.button == 0) {
-                setTimeout(() => {
-                    let obj = draw.getSelected()
-                    let group = draw.getSelectedGroup()
-                    this.props = obj ? (obj.text ? this.propText : this.static) : (group ? this.group : [])
-                }, 100);
-            }
         },
         save(type) {
             type == 'pdf' ? '' : ''
@@ -515,6 +501,17 @@ export default {
             } catch (e) {
                 console.log(e.message)
             }
+        },
+        callback() {
+            let obj = draw.getSelected()
+            let group = draw.getSelectedGroup()
+            this.props = obj ? (obj.text ? this.propText : this.static) : (group ? this.group : [])
+            if (obj) {
+                let { fontSize, opacity, strokeWidth, lineHeight, charSpacing } = obj
+                this.fontSize = fontSize, this.opacity = opacity,
+                    this.strokeWidth = strokeWidth, this.lineHeight = lineHeight,
+                    this.charSpacing = charSpacing
+            }
         }
     },
     mounted() {
@@ -524,7 +521,7 @@ export default {
         // console.log('isPreview', this.isPreview)
         canvas.isPreview = this.isPreview
         this.canvas = canvas
-        draw.init(canvas)
+        draw.init(canvas, this.callback)
 
         history.init(canvas)
         this.draws.push(canvas)
