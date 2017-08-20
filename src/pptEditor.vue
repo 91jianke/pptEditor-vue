@@ -2,7 +2,9 @@
     <div class="pages" ref="pages" tabindex="-1">
         <!-- 工具栏 -->
         <div class="contorl" v-show="!isPreview" :style="`top:${(height+32)*activeIndex+88}px;`">
-            <span :class="(item=='pen'&&isDraw)?'active jk-'+item:'jk-'+item" v-for="(item,index) in controls" @click="setControl(item)" :key="index"></span>
+            <span :class="(item=='pen'&&isDraw)?'active jk-'+item:'jk-'+item" v-for="(item,index) in controls" @click="setControl(item)" :key="index">
+
+            </span>
         </div>
         <!--画板-->
         <div draggable="true" tabindex="0" :class="item.active?'draw-box active':'draw-box'" v-for="(item,index) in pages" @dblclick="stop()" :isPreview="isPreview" @click="activeCanvas(index)" @contextmenu="contextmenu($event)" :key="index">
@@ -63,24 +65,12 @@ export default {
     components: { compUI, colorPiker, },
     name: 'pptEditor',
     props: {
-        'width': {
-            type: Number,
-            required: true,
-            default: 788
-        }, 'height': {
-            type: Number,
-            required: true,
-            default: 443
-        }, 'isPreview': {
-            type: Boolean,
-            default: false,
-            //   required:true
-        }
+        'width': { type: Number, required: true, default: 788 },
+        'height': { type: Number, required: true, default: 443 },
+        'isPreview': { type: Boolean, default: false, }
     },
     watch: {
-        isPreview(v) {
-            this.cancelSelect(v)
-        },
+        isPreview(v) { this.cancelSelect(v); this.canvas.isPreview = v; },
     },
     data() {
         return {
@@ -94,9 +84,9 @@ export default {
                 'flipx', 'flipy', 'remove', 'lock'
             ],
             static: ['undo', 'redo', 'fill', 'stroke', 'back', 'opacity', 'border', 'flipx', 'flipy', 'group', 'ungroup', 'remove', 'lock'],
-            group: ['undo', 'redo', 'groupleft', 'groupright', 'grouptop', 'groupbottom', 'groupcenterv', 'groupcenterh', /* 'groupvertical', 'grouphorizontal', */'group', 'ungroup', 'remove', 'lock'],
+            group: ['undo', 'redo', 'groupleft', 'groupright', 'grouptop', 'groupbottom', 'groupcenterv', 'groupcenterh',  /* 'groupvertical', 'grouphorizontal', */ 'group', 'ungroup', 'remove', 'lock'],
             isDraw: false,
-            controls: [/* 'info', */ 'plus', 'minus', 'pen', 'text', 'image', 'shape', 'line', 'table', 'media', 'book', 'view'],
+            controls: [/* 'info', */ 'plus', 'minus', 'pen', 'text', 'image', 'shape', 'line','link', 'table', 'media', 'book', 'view'],
             canvas: '', draws: [], pages: [{ active: true, id: `canvas-${new Date() * 1}` }],
             contextMenuShow: false,
             contextMenu: [
@@ -130,7 +120,7 @@ export default {
         addStyle.rel = "stylesheet";
         addStyle.type = "text/css";
         addStyle.media = "screen";
-        addStyle.href = '//at.alicdn.com/t/font_dku017a8db98jjor.css';
+        addStyle.href = '//at.alicdn.com/t/font_335448_i2m88q76oa40wwmi.css';
         container.appendChild(addStyle);
         var meta = document.createElement('meta')
         meta.name = 'renderer'
@@ -234,7 +224,8 @@ export default {
                 case 'text': this.addComponent('Textbox'); break;
                 case 'image': this.showImgBox = true; break;
                 case 'shape': this.showSvgBox = true; break;
-                case 'line': break;
+                case 'line': draw.drawMode('line'); break;
+                case 'link': draw.drawMode('link'); break;
                 case 'table': this.showTableBox = true; break;
                 case 'media': this.showVideoBox = true; break;
                 case 'book': this.showShiTiBox = true; break;
@@ -242,6 +233,7 @@ export default {
                 // case 'fullscreen': this.toggleFullScreen(this.$refs.pages); break;
             }
             item != 'pen' && (this.isDraw = false, draw.setFreeDrawingMode(false))
+           'line,link,rect,circle,triangle'.indexOf(item)<0 && draw.drawMode(false);
             this.cancelSelect(false)
         },
         activeCanvas(index, event) {
@@ -271,51 +263,19 @@ export default {
             }
             this.updateJosn()
         },
-        setAlign(name, g) {
+        setAlign(name, o) {
             // let ls = g.map((x) => { return { l: x.left, r: x.left + x.width, t: x.top, b: x.top + x.height } })
             // console.log(ls)
-            var ls, rs, ts, bs, minl, maxr, mint, maxb, count, newboxs;
+            let g = o.getObjects()
+            var ox = o.width / 2, oy = o.height / 2, r = 6.5;
+
             switch (name) {
-                case 'groupleft':
-                    ls = g.map(x => x.left)
-                    minl = Math.min.apply(null, ls)
-                    g.map(x => x.set('left', minl).setCoords())
-                    break;
-                case 'groupright':
-                    rs = g.map(x => x.left + x.width)
-                    maxr = Math.max.apply(null, rs)
-                    g.map(x => x.set('left', x.left + maxr - x.left - x.width).setCoords())
-                    break;
-                case 'grouptop':
-                    ts = g.map(x => x.top)
-                    mint = Math.min.apply(null, ts)
-                    g.map(x => x.set('top', mint).setCoords())
-                    break;
-                case 'groupbottom':
-                    bs = g.map(x => x.top + x.height)
-                    maxb = Math.max.apply(null, bs)
-                    g.map(x => x.set('top', x.top + maxb - x.top - x.height).setCoords())
-                    break;
-                case 'groupcenterv':
-                    rs = g.map(x => x.left + x.width)
-                    ls = g.map(x => x.left)
-                    maxr = Math.max.apply(null, rs)
-                    minl = Math.min.apply(null, ls)
-                    g.map((x) => {
-                        let o = (maxr - minl - x.width) / 2
-                        x.set('left', minl + o).setCoords()
-                    })
-                    break;
-                case 'groupcenterh':
-                    bs = g.map(x => x.top + x.height)
-                    ts = g.map(x => x.top)
-                    maxb = Math.max.apply(null, bs)
-                    mint = Math.min.apply(null, ts)
-                    g.map((x) => {
-                        let o = (maxb - mint - x.height) / 2
-                        x.set('top', mint + o).setCoords()
-                    })
-                    break;
+                case 'groupleft': g.map(x => x.set('left', !x.flipY ? -ox : -ox + x.width * x.zoomX + r).setCoords()); break;
+                case 'groupright': g.map(x => x.set('left', ox - x.width * x.zoomX - r).setCoords()); break;
+                case 'grouptop': g.map(x => x.set('top', -oy).setCoords()); break;
+                case 'groupbottom': g.map(x => x.set('top', oy - x.height * x.zoomY - r).setCoords()); break;
+                case 'groupcenterv': g.map((x) => x.set('left', -x.width * x.zoomX / 2).setCoords()); break;
+                case 'groupcenterh': g.map((x) => x.set('top', -x.height * x.zoomY / 2).setCoords()); break;
                 case 'groupvertical':// 垂直分布算法
                     /*count = g.length
                     bs = g.map(x => x.top + x.height)
@@ -325,6 +285,9 @@ export default {
                     let y = (maxb - mint) / count
                     newboxs = g.map((x, i) => mint + y * i)
                     g.map((x, i) => i != 0 && i != count - 1 && x.set('top', mint + o).setCoords())*/
+                    let arr = g.map(x => x.height).join('+')
+                    let t = (o.height - eval(arr)) / g.length
+                    g.map(x => x.set('top', t).setCoords())
                     break;
                 case 'grouphorizontal': // 水平分布算法
                     // count = g.length
@@ -348,7 +311,7 @@ export default {
             if (!obj && !g) return
             //group 
             if ('groupleft groupright grouptop groupbottom groupcenterv groupcenterh groupvertical grouphorizontal'.indexOf(name) > -1) {
-                this.setAlign(name, g.getObjects())
+                this.setAlign(name, g)
                 return
             }
             // static
@@ -519,7 +482,7 @@ export default {
         // this.pages.push({ active: true, id: `canvas-${new Date() * 1}` })
         let canvas = new qdraw.Canvas(this.pages[0].id);
         // console.log('isPreview', this.isPreview)
-        canvas.isPreview = this.isPreview
+        canvas.isPreview = this.isPreview        
         this.canvas = canvas
         draw.init(canvas, this.callback)
 
